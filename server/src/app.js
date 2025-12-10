@@ -15,6 +15,7 @@ const authRoutes = require('./routes/authRoutes');
 const githubRoutes = require('./routes/githubRoutes');
 const geminiRoutes = require('./routes/geminiRoutes');
 const logsRoutes = require('./routes/logsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -104,6 +105,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ======================
 // 404 HANDLER
