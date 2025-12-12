@@ -2,7 +2,7 @@
 
 **Track your developer journey. Prove your consistency. Connect learning to real work.**
 
-DevTrack is a full-stack application that helps developers track their learning progress, document their projects, and build a provable record of consistent growth.
+DevTrack is a full-stack application that helps developers track their learning progress, document their projects, and build a provable record of consistent growth with AI-powered insights.
 
 ---
 
@@ -13,37 +13,43 @@ DevTrack is a full-stack application that helps developers track their learning 
 | **Scattered Learning** | Centralized tracking of courses, tutorials, and skills |
 | **Invisible Progress** | Visual proof of consistent daily/weekly activity |
 | **Disconnected Skills** | Links what you learn → what you build |
-| **No Portfolio Proof** | Generates shareable progress reports |
+| **No Portfolio Proof** | AI-analyzed project progress reports |
 
 ---
 
 ## ✨ Core Features
 
 ### 📚 Learning Tracker
-- Log courses, tutorials, books, and documentation
-- Track completion percentage and time spent
-- Tag skills and technologies learned
+- Log daily learning sessions with start/end times
+- Track what you learned each day
+- Tag skills and technologies
+- Mood tracking for productivity insights
+- Edit and delete log entries
 
 ### 🛠️ Project Tracker
-- Document projects you're building
-- Link projects to skills being applied
-- Track project milestones and progress
+- Document projects with GitHub repository links
+- **AI-powered project analysis** using Groq (Llama 3.3)
+- Automatic language detection from repos
+- Progress tracking based on actual code, not just commits
+- Support for **private repositories** via OAuth
 
-### 📊 Consistency Dashboard
-- Daily/weekly/monthly activity heatmaps
-- Streak tracking and achievements
-- Progress analytics and insights
+### 📊 Dashboard
+- Quick stats overview (projects, logs, streaks)
+- Recent activity timeline
+- Backend health status monitoring
 
-### 🔗 Learning ↔ Work Connection
-- Map learned skills to project implementations
-- Visualize the journey from learning to applying
-- Generate "proof of growth" reports
+### 🤖 AI Chat Assistant
+- Context-aware coding help
+- Access to your project and learning data
+- Powered by Groq API with rate limiting
+- Code review and suggestions
 
 ### 🐙 GitHub Integration
-- Track commits, PRs, and contributions
-- Auto-log coding activity from GitHub
-- Visualize repository progress
-- Contribution heatmaps synced with learning
+- **Private repo access** via user OAuth tokens
+- Fetch commits, PRs, issues, and languages
+- Analyze repository structure and key files
+- Commit pattern analysis (features/fixes/docs/tests)
+- Auto-extract technologies from package.json, etc.
 
 ---
 
@@ -51,12 +57,13 @@ DevTrack is a full-stack application that helps developers track their learning 
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | React.js, React Router, Axios |
+| **Frontend** | React 18, Vite, React Router, Framer Motion, GSAP |
 | **Backend** | Node.js, Express.js |
-| **Database** | MongoDB with Mongoose |
-| **Authentication** | [Clerk](https://clerk.com) (GitHub Sign-in Only) |
-| **GitHub Integration** | GitHub REST API / Octokit |
-| **Styling** | CSS3 / Tailwind CSS |
+| **Database** | Firebase Firestore |
+| **Authentication** | [Clerk](https://clerk.com) (GitHub OAuth) |
+| **AI** | Groq API (Llama 3.3 70B) |
+| **GitHub API** | Octokit |
+| **Styling** | Tailwind CSS |
 
 ---
 
@@ -64,64 +71,42 @@ DevTrack is a full-stack application that helps developers track their learning 
 
 ```
 DevTrack/
-├── client/                     # React Frontend
-│   ├── public/
-│   │   ├── index.html
-│   │   └── favicon.ico
+├── client/                     # React Frontend (Vite)
 │   ├── src/
 │   │   ├── components/         # Reusable UI components
-│   │   │   ├── common/         # Buttons, Inputs, Cards, etc.
-│   │   │   ├── layout/         # Header, Footer, Sidebar
-│   │   │   └── features/       # Feature-specific components
+│   │   │   ├── ui/             # Button, Card, Badge, etc.
+│   │   │   └── layout/         # AppLayout, Sidebar
 │   │   ├── pages/              # Page components
-│   │   │   ├── Dashboard/
-│   │   │   ├── Learning/
-│   │   │   ├── Projects/
-│   │   │   ├── Analytics/
-│   │   │   └── Auth/
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── context/            # React Context providers
-│   │   ├── services/           # API service functions
-│   │   ├── utils/              # Utility functions
-│   │   ├── styles/             # Global styles
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Learning.jsx
+│   │   │   ├── Projects.jsx
+│   │   │   ├── Chat.jsx
+│   │   │   └── Landing.jsx
+│   │   ├── services/           # API service (Axios)
 │   │   ├── App.jsx
 │   │   └── main.jsx
-│   ├── package.json
-│   └── vite.config.js
+│   └── package.json
 │
 ├── server/                     # Node.js Backend
 │   ├── src/
-│   │   ├── config/             # Configuration files
-│   │   │   ├── db.js           # Database connection
-│   │   │   └── env.js          # Environment variables
+│   │   ├── config/             # Firebase config
 │   │   ├── controllers/        # Route controllers
 │   │   │   ├── authController.js
-│   │   │   ├── learningController.js
-│   │   │   ├── projectController.js
-│   │   │   └── analyticsController.js
-│   │   ├── models/             # Mongoose models
-│   │   │   ├── User.js
-│   │   │   ├── LearningEntry.js
-│   │   │   ├── Project.js
-│   │   │   └── Activity.js
+│   │   │   ├── geminiController.js
+│   │   │   ├── githubController.js
+│   │   │   ├── logsController.js
+│   │   │   └── projectController.js
+│   │   ├── services/           # Business logic
+│   │   │   ├── githubService.js    # GitHub API integration
+│   │   │   ├── groqService.js      # AI analysis
+│   │   │   └── geminiService.js    # Gemini fallback
 │   │   ├── routes/             # Express routes
-│   │   │   ├── authRoutes.js
-│   │   │   ├── learningRoutes.js
-│   │   │   ├── projectRoutes.js
-│   │   │   └── analyticsRoutes.js
-│   │   ├── middleware/         # Custom middleware
-│   │   │   ├── auth.js
-│   │   │   ├── errorHandler.js
-│   │   │   └── validation.js
-│   │   ├── utils/              # Utility functions
-│   │   └── app.js              # Express app setup
-│   ├── server.js               # Entry point
-│   ├── package.json
-│   └── .env.example
+│   │   ├── middleware/         # Auth, validation, errors
+│   │   └── app.js
+│   └── package.json
 │
 ├── .gitignore
-├── README.md
-└── LICENSE
+└── README.md
 ```
 
 ---
@@ -130,8 +115,10 @@ DevTrack/
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- MongoDB (local or Atlas)
 - npm or yarn
+- Firebase project with Firestore
+- Clerk account with GitHub OAuth enabled
+- Groq API key
 
 ### Installation
 
@@ -151,20 +138,41 @@ npm install
 
 ### Environment Setup
 
-Create `.env` file in the `server` directory:
+**Server `.env`:**
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/devtrack
 NODE_ENV=development
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your-project.iam.gserviceaccount.com
 
 # Clerk Authentication
 CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
 CLERK_SECRET_KEY=sk_test_xxxxx
 
-# GitHub API
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
+# GitHub API (PAT for public repos fallback)
+GITHUB_PAT=ghp_xxxxxxxxxxxx
+
+# AI - Groq
+GROQ_API_KEY=gsk_xxxxxxxxxxxx
+
+# Optional - Gemini fallback
+GEMINI_API_KEY=your_gemini_key
 ```
+
+**Client `.env`:**
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+```
+
+### Clerk Setup for Private Repos
+
+1. Go to your Clerk Dashboard → User & Authentication → Social Connections
+2. Enable GitHub and add the `repo` scope for private repository access
+3. Users will need to reconnect their GitHub account to grant access
 
 ### Running the Application
 
@@ -178,32 +186,71 @@ npm run dev
 
 ---
 
-## 📋 API Endpoints (Planned)
+## 📋 API Endpoints
 
+### Auth
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/auth/register` | Register new user |
-| `POST` | `/api/auth/login` | User login |
-| `GET` | `/api/learning` | Get all learning entries |
-| `POST` | `/api/learning` | Add new learning entry |
+| `POST` | `/api/auth/sync` | Sync user from Clerk to Firestore |
+| `GET` | `/api/auth/me` | Get current user profile |
+
+### Learning Logs
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/logs` | Get all learning entries |
+| `POST` | `/api/logs` | Create new entry |
+| `PUT` | `/api/logs/:id` | Update entry |
+| `DELETE` | `/api/logs/:id` | Delete entry |
+| `GET` | `/api/logs/stats` | Get learning statistics |
+
+### Projects
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | `GET` | `/api/projects` | Get all projects |
-| `POST` | `/api/projects` | Create new project |
-| `GET` | `/api/analytics/dashboard` | Get dashboard stats |
+| `POST` | `/api/projects` | Create project (auto-analyzes if GitHub URL) |
+| `PUT` | `/api/projects/:id` | Update project |
+| `DELETE` | `/api/projects/:id` | Delete project |
+| `GET` | `/api/projects/stats` | Get project statistics |
+
+### GitHub
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/github/activity` | Get user's GitHub activity |
+| `GET` | `/api/github/commits` | Get recent commits |
+| `GET` | `/api/github/repos` | Get user repositories |
+| `GET` | `/api/github/repo/:owner/:repo` | Analyze specific repo |
+
+### AI Chat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/gemini/chat` | Chat with AI assistant |
+| `POST` | `/api/gemini/analyze-project` | Analyze project with AI |
 
 ---
 
 ## 🗺️ Roadmap
 
 - [x] Initial project setup
-- [ ] Clerk authentication (GitHub Sign-in)
-- [ ] GitHub API integration
-- [ ] Learning entry CRUD
-- [ ] Project tracking CRUD
-- [ ] Activity logging (auto-sync from GitHub)
-- [ ] Dashboard with analytics
+- [x] Clerk authentication (GitHub OAuth)
+- [x] Firebase Firestore integration
+- [x] Learning entry CRUD
+- [x] Project tracking CRUD
+- [x] GitHub API integration
+- [x] Private repository support
+- [x] AI-powered project analysis
+- [x] AI Chat assistant
+- [x] Dashboard with stats
+- [x] Beautiful landing page with animations
 - [ ] Streak tracking & contribution heatmaps
 - [ ] Export/share progress reports
-- [ ] Mobile responsive design
+- [ ] Push notifications
+- [ ] Mobile app
+
+---
+
+## 👥 Team
+
+Built by the Vortex-16 team.
 
 ---
 

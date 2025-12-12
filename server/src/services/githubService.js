@@ -200,6 +200,140 @@ class GitHubService {
     }
 
     /**
+     * Get content of key project files for AI analysis
+     */
+    async getKeyFileContents(owner, repo) {
+        const keyFiles = [
+            'package.json',
+            'pyproject.toml',
+            'requirements.txt',
+            'Cargo.toml',
+            'go.mod',
+            'pom.xml',
+            'build.gradle',
+            '.env.example',
+            'docker-compose.yml',
+            'Dockerfile'
+        ];
+
+        const contents = {};
+
+        for (const filename of keyFiles) {
+            try {
+                const { data } = await this.octokit.rest.repos.getContent({
+                    owner,
+                    repo,
+                    path: filename,
+                });
+
+                if (data.content) {
+                    const decoded = Buffer.from(data.content, 'base64').toString('utf-8');
+                    contents[filename] = decoded.substring(0, 1500); // Limit size
+                }
+            } catch {
+                // File doesn't exist, skip
+            }
+        }
+
+        return contents;
+    }
+
+    /**
+     * Get commit statistics (additions, deletions, files changed)
+     */
+    async getCommitStats(owner, repo, limit = 20) {
+        try {
+            const commits = await this.getAllCommitsForRepo(owner, repo, limit);
+            const stats = {
+                totalCommits: commits.length,
+                commitMessages: [],
+                commitPatterns: {
+                    features: 0,
+                    fixes: 0,
+                    docs: 0,
+                    refactors: 0,
+                    tests: 0,
+                    other: 0
+                },
+                recentActivity: []
+            };
+
+            for (const commit of commits) {
+                const msg = commit.message.toLowerCase();
+                stats.commitMessages.push(commit.message);
+
+                // Categorize commits by message pattern
+                if (msg.includes('feat') || msg.includes('add') || msg.includes('implement')) {
+                    stats.commitPatterns.features++;
+                } else if (msg.includes('fix') || msg.includes('bug') || msg.includes('resolve')) {
+                    stats.commitPatterns.fixes++;
+                } else if (msg.includes('doc') || msg.includes('readme')) {
+                    stats.commitPatterns.docs++;
+                } else if (msg.includes('refactor') || msg.includes('clean') || msg.includes('improve')) {
+                    stats.commitPatterns.refactors++;
+                } else if (msg.includes('test')) {
+                    stats.commitPatterns.tests++;
+                } else {
+                    stats.commitPatterns.other++;
+                }
+
+                // Track recent activity by date
+                if (commit.date) {
+                    const dateKey = commit.date.split('T')[0];
+                    stats.recentActivity.push({
+                        date: dateKey,
+                        message: commit.message,
+                        author: commit.author
+                    });
+                }
+            }
+
+            return stats;
+        } catch (error) {
+            console.error('Error fetching commit stats:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Get file tree depth for project structure analysis
+     */
+    async getProjectStructure(owner, repo, path = '', depth = 0, maxDepth = 2) {
+        if (depth > maxDepth) return [];
+
+        try {
+            const { data } = await this.octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path,
+            });
+
+            if (!Array.isArray(data)) return [];
+
+            const structure = [];
+            for (const item of data) {
+                const entry = {
+                    name: item.name,
+                    path: item.path,
+                    type: item.type,
+                    size: item.size || 0
+                };
+
+                if (item.type === 'dir' && depth < maxDepth) {
+                    entry.children = await this.getProjectStructure(owner, repo, item.path, depth + 1, maxDepth);
+                }
+
+                structure.push(entry);
+            }
+
+            return structure;
+        } catch (error) {
+            console.error('Error fetching project structure:', error.message);
+            return [];
+        }
+    }
+
+    /**
      * Get recent commits across user's repos
      */
     async getRecentCommits(username, days = 7) {
@@ -328,7 +462,9 @@ class GitHubService {
                 issues,
                 contents,
                 readme,
-                languagesData
+                languagesData,
+                keyFiles,
+                commitStats
             ] = await Promise.all([
                 this.octokit.rest.repos.get({ owner, repo }).then(r => r.data),
                 this.getAllCommitsForRepo(owner, repo, 100),
@@ -336,7 +472,9 @@ class GitHubService {
                 this.getOpenIssues(owner, repo),
                 this.getRepoContents(owner, repo),
                 this.getReadme(owner, repo),
-                this.octokit.rest.repos.listLanguages({ owner, repo }).then(r => r.data)
+                this.octokit.rest.repos.listLanguages({ owner, repo }).then(r => r.data),
+                this.getKeyFileContents(owner, repo),
+                this.getCommitStats(owner, repo, 30)
             ]);
 
             // Process languages
@@ -352,7 +490,7 @@ class GitHubService {
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const recentCommits = commits.filter(c => new Date(c.date) > oneWeekAgo);
 
-            console.log(`✅ Fetched: ${commits.length} commits, ${pullRequests.length} PRs, ${issues.length} issues`);
+            console.log(`✅ Fetched: ${commits.length} commits, ${pullRequests.length} PRs, ${issues.length} issues, ${Object.keys(keyFiles).length} key files`);
 
             return {
                 // Basic info
@@ -360,6 +498,7 @@ class GitHubService {
                 fullName: repoData.full_name,
                 description: repoData.description,
                 url: repoData.html_url,
+                isPrivate: repoData.private,
 
                 // Metrics
                 stars: repoData.stargazers_count,
@@ -381,6 +520,9 @@ class GitHubService {
                 recentCommitsThisWeek: recentCommits.length,
                 commits: commits.slice(0, 50), // Last 50 for AI context
 
+                // Commit analysis
+                commitStats: commitStats,
+
                 // PRs and Issues
                 openPullRequests: pullRequests,
                 openIssues: issues,
@@ -388,6 +530,9 @@ class GitHubService {
                 // Structure
                 directoryStructure: contents,
                 readme: readme,
+
+                // Key file contents for AI to understand project
+                keyFiles: keyFiles,
 
                 // Topics
                 topics: repoData.topics || [],

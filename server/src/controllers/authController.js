@@ -27,6 +27,25 @@ const syncUser = async (req, res, next) => {
             (acc) => acc.provider === 'github'
         );
 
+        // Try to get GitHub OAuth token for private repo access
+        let githubAccessToken = null;
+        if (githubAccount) {
+            try {
+                // Get OAuth access token from Clerk
+                const oauthTokens = await clerkClient.users.getUserOauthAccessToken(
+                    userId,
+                    'oauth_github'
+                );
+                if (oauthTokens?.data?.[0]?.token) {
+                    githubAccessToken = oauthTokens.data[0].token;
+                    console.log('✅ GitHub OAuth token retrieved for user:', userId);
+                }
+            } catch (tokenErr) {
+                console.warn('⚠️ Could not retrieve GitHub OAuth token:', tokenErr.message);
+                // Continue without OAuth token - will fall back to PAT for public repos
+            }
+        }
+
         const userData = {
             clerkId: userId,
             email: clerkUser.emailAddresses?.[0]?.emailAddress || null,
@@ -34,6 +53,7 @@ const syncUser = async (req, res, next) => {
             avatarUrl: clerkUser.imageUrl || null,
             githubUsername: githubAccount?.username || null,
             githubId: githubAccount?.externalId || null,
+            githubAccessToken: githubAccessToken, // Store for private repo access
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             lastStartTime: null,

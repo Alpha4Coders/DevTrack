@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const githubController = require('../controllers/githubController');
 
 // Get GitHub activity summary
@@ -23,7 +23,7 @@ router.get('/languages', requireAuth, githubController.getLanguages);
 // Get GitHub profile (uses PAT, not user-specific)
 router.get('/profile', githubController.getProfile);
 
-// Analyze a specific repository by owner/repo
-router.get('/repo/:owner/:repo', githubController.analyzeRepo);
+// Analyze a specific repository by owner/repo (optionalAuth allows private repo access when logged in)
+router.get('/repo/:owner/:repo', optionalAuth, githubController.analyzeRepo);
 
 module.exports = router;

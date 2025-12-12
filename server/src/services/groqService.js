@@ -112,7 +112,34 @@ Guidelines:
      * @param {object} repoInfo - Complete repository information from GitHub
      */
     async analyzeProjectProgress(repoInfo) {
+        // Format key files for the prompt
+        const keyFilesSection = repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
+            ? Object.entries(repoInfo.keyFiles)
+                .map(([filename, content]) => `### ${filename}\n\`\`\`\n${content.substring(0, 800)}\n\`\`\``)
+                .join('\n\n')
+            : 'No key configuration files found';
+
+        // Format commit patterns
+        const commitPatternSection = repoInfo.commitStats?.commitPatterns
+            ? `
+- Feature commits: ${repoInfo.commitStats.commitPatterns.features}
+- Bug fix commits: ${repoInfo.commitStats.commitPatterns.fixes}
+- Documentation commits: ${repoInfo.commitStats.commitPatterns.docs}
+- Refactoring commits: ${repoInfo.commitStats.commitPatterns.refactors}
+- Test commits: ${repoInfo.commitStats.commitPatterns.tests}
+- Other commits: ${repoInfo.commitStats.commitPatterns.other}`
+            : 'Commit pattern analysis not available';
+
         const prompt = `You are a DevTrack project analyzer. Analyze this GitHub repository data and provide a comprehensive progress report.
+
+IMPORTANT: Progress percentage should be calculated based on:
+1. Code structure completeness (folders, files, organization)
+2. Feature implementation evidence from commits
+3. Documentation quality (README completeness)
+4. Test coverage indicators
+5. Configuration maturity (env files, docker, CI/CD)
+6. Open issues vs resolved patterns
+DO NOT base progress solely on commit count!
 
 REPOSITORY DATA:
 - Name: ${repoInfo.name}
@@ -129,57 +156,70 @@ REPOSITORY DATA:
 - Created: ${repoInfo.createdAt || 'Unknown'}
 - Last Push: ${repoInfo.pushedAt || 'Unknown'}
 - Topics: ${repoInfo.topics?.join(', ') || 'None'}
+- Is Private: ${repoInfo.isPrivate ? 'Yes' : 'No'}
 
-RECENT COMMITS (last 20):
-${repoInfo.commits?.slice(0, 20).map(c => `- ${c.date?.split('T')[0] || 'Unknown'}: ${c.message}`).join('\n') || 'No commits'}
+COMMIT ANALYSIS:
+${commitPatternSection}
 
-OPEN ISSUES:
-${repoInfo.openIssues?.slice(0, 10).map(i => `- #${i.number}: ${i.title}`).join('\n') || 'No open issues'}
+RECENT COMMITS (analyzing work done):
+${repoInfo.commits?.slice(0, 25).map(c => `- ${c.date?.split('T')[0] || 'Unknown'}: ${c.message}`).join('\n') || 'No commits'}
 
-OPEN PULL REQUESTS:
+OPEN ISSUES (remaining work):
+${repoInfo.openIssues?.slice(0, 10).map(i => `- #${i.number}: ${i.title} [${i.labels.join(', ') || 'no labels'}]`).join('\n') || 'No open issues'}
+
+OPEN PULL REQUESTS (work in progress):
 ${repoInfo.openPullRequests?.slice(0, 5).map(p => `- #${p.number}: ${p.title}`).join('\n') || 'No open PRs'}
 
 DIRECTORY STRUCTURE:
-${repoInfo.directoryStructure?.map(d => `- ${d.type === 'dir' ? '📁' : '📄'} ${d.name}`).join('\n') || 'Unknown'}
+${repoInfo.directoryStructure?.map(d => `- ${d.type === 'dir' ? '📁' : '📄'} ${d.name}${d.type === 'dir' ? '/' : ''}`).join('\n') || 'Unknown'}
+
+KEY PROJECT FILES (actual code/config):
+${keyFilesSection}
 
 README EXCERPT:
-${repoInfo.readme?.substring(0, 500) || 'No README found'}
+${repoInfo.readme?.substring(0, 800) || 'No README found'}
 
 ---
 
-Provide a detailed analysis in this EXACT JSON format:
+Based on the ACTUAL CODE and COMMITS above (not just commit count), provide analysis in this EXACT JSON format:
 {
-  "progressSummary": "<2-3 sentence summary of overall project progress>",
-  "progressPercentage": <0-100 estimate of project completion>,
-  "commitFrequencyScore": <0-100 based on commit activity>,
+  "progressSummary": "<2-3 sentence summary explaining WHAT has been built and what remains>",
+  "progressPercentage": <0-100 based on actual features implemented vs project scope>,
+  "commitFrequencyScore": <0-100 based on commit regularity and quality>,
   "productivityStreaks": {
-    "currentStreak": <number of consecutive active days>,
+    "currentStreak": <estimated consecutive active days>,
     "assessment": "<brief assessment of coding consistency>"
   },
   "areasOfImprovement": [
-    "<specific improvement 1>",
+    "<specific improvement 1 based on code analysis>",
     "<specific improvement 2>",
     "<specific improvement 3>"
   ],
   "nextRecommendedTasks": [
-    "<specific task 1 based on open issues/commits>",
+    "<specific actionable task 1 based on open issues/code gaps>",
     "<specific task 2>",
     "<specific task 3>"
   ],
   "fileAnalysis": [
     {"area": "<folder/area name>", "status": "<active|stale|needs-attention>", "note": "<brief note>"}
   ],
-  "trends": "<observation about recent activity patterns>",
-  "concerns": "<any red flags or risks identified>"
+  "codeQuality": {
+    "hasTests": <true|false based on evidence>,
+    "hasDocumentation": <true|false>,
+    "hasCI": <true|false>,
+    "configurationMaturity": "<basic|intermediate|advanced>"
+  },
+  "trends": "<observation about recent activity patterns from commit dates>",
+  "concerns": "<any red flags or risks identified from code/commits>"
 }`;
 
         try {
             const messages = [
-                { role: "system", content: "You are an expert project analyzer. Always respond with valid JSON only." },
+                { role: "system", content: "You are an expert project analyzer. Analyze the actual code and commits to determine real progress. Always respond with valid JSON only." },
                 { role: "user", content: prompt }
             ];
 
-            const jsonResponse = await this.makeRequest(messages, { jsonMode: true, max_tokens: 2000 });
+            const jsonResponse = await this.makeRequest(messages, { jsonMode: true, max_tokens: 2500 });
             const parsed = JSON.parse(jsonResponse);
 
             console.log('✅ AI Project Analysis complete');

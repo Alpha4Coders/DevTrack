@@ -190,7 +190,25 @@ const analyzeRepo = async (req, res, next) => {
             throw new APIError('Owner and repo are required', 400);
         }
 
-        const githubService = new GitHubService();
+        // Try to get user's GitHub token for private repo access
+        let userToken = null;
+        if (req.auth?.userId) {
+            try {
+                const userDoc = await collections.users().doc(req.auth.userId).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.githubAccessToken) {
+                        userToken = userData.githubAccessToken;
+                        console.log('🔑 Using user OAuth token for private access');
+                    }
+                }
+            } catch (tokenErr) {
+                console.warn('⚠️ Could not retrieve user token, falling back to PAT');
+            }
+        }
+
+        // Use user token if available, otherwise fallback to PAT
+        const githubService = new GitHubService(userToken);
         const repoInfo = await githubService.getRepoInfo(owner, repo);
 
         res.status(200).json({
@@ -198,6 +216,13 @@ const analyzeRepo = async (req, res, next) => {
             data: repoInfo,
         });
     } catch (error) {
+        // If it's a 404 and we used user token, provide a helpful message
+        if (error.status === 404 || error.message?.includes('Not Found')) {
+            return res.status(404).json({
+                success: false,
+                error: 'Repository not found. If this is a private repo, ensure your GitHub account has access.',
+            });
+        }
         next(error);
     }
 };
