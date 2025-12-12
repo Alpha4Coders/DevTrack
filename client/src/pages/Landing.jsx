@@ -6,6 +6,35 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// Magnetic Button Component
+function MagneticButton({ children, className = '', strength = 0.3 }) {
+    const ref = useRef(null)
+
+    const handleMouseMove = (e) => {
+        const btn = ref.current
+        if (!btn) return
+        const rect = btn.getBoundingClientRect()
+        const x = e.clientX - rect.left - rect.width / 2
+        const y = e.clientY - rect.top - rect.height / 2
+        gsap.to(btn, { x: x * strength, y: y * strength, duration: 0.3, ease: 'power2.out' })
+    }
+
+    const handleMouseLeave = () => {
+        gsap.to(ref.current, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' })
+    }
+
+    return (
+        <div
+            ref={ref}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className={`inline-block ${className}`}
+        >
+            {children}
+        </div>
+    )
+}
+
 // Team members
 const teamMembers = [
     { name: 'Vikash Gupta', github: 'Vortex-16', role: 'Backend & Frontend' },
@@ -14,14 +43,14 @@ const teamMembers = [
     { name: 'Rajdeep Das', github: 'yourajdeep', role: 'Frontend Developer' }
 ]
 
-// Features
+// Features - with sizes for bento grid
 const features = [
-    { title: 'Daily Coding Tracker', desc: 'Track every line of code you write', icon: '⚡', color: 'cyan' },
-    { title: 'AI Error Assistance', desc: 'Smart suggestions when you\'re stuck', icon: '🤖', color: 'purple' },
-    { title: 'GitHub Sync', desc: 'Auto-sync commits and contributions', icon: '🔗', color: 'blue' },
-    { title: 'Streak Calendar', desc: 'Visualize your consistency', icon: '🔥', color: 'orange' },
-    { title: 'Skill Growth', desc: 'Track skill progression over time', icon: '📈', color: 'green' },
-    { title: 'Analytics', desc: 'Beautiful progress visualizations', icon: '📊', color: 'pink' }
+    { title: 'Daily Coding Tracker', desc: 'Track every line of code you write and monitor your daily progress with detailed insights', icon: '⚡', color: 'cyan', size: 'large' },
+    { title: 'AI Error Assistance', desc: 'Smart suggestions when stuck', icon: '🤖', color: 'purple', size: 'small' },
+    { title: 'GitHub Sync', desc: 'Auto-sync commits and PRs', icon: '🔗', color: 'blue', size: 'small' },
+    { title: 'Streak Calendar', desc: 'Visualize your coding consistency with beautiful heatmaps and streak tracking', icon: '🔥', color: 'orange', size: 'medium' },
+    { title: 'Skill Growth', desc: 'Track skill progression', icon: '📈', color: 'green', size: 'small' },
+    // { title: 'Analytics', desc: 'Beautiful visualizations', icon: '📊', color: 'pink', size: 'small' }
 ]
 
 // Steps
@@ -130,39 +159,319 @@ function NeonText({ children, color = 'cyan' }) {
     return <span className={colors[color]}>{children}</span>
 }
 
-// Feature card
+// Feature card - Bento grid with unique sizes
 function FeatureCard({ feature, index }) {
-    const borderColors = {
-        cyan: 'hover:border-cyan-500/70 hover:shadow-[0_0_30px_rgba(34,211,238,0.15)]',
-        purple: 'hover:border-purple-500/70 hover:shadow-[0_0_30px_rgba(192,132,252,0.15)]',
-        blue: 'hover:border-blue-500/70 hover:shadow-[0_0_30px_rgba(96,165,250,0.15)]',
-        orange: 'hover:border-orange-500/70 hover:shadow-[0_0_30px_rgba(251,146,60,0.15)]',
-        green: 'hover:border-emerald-500/70 hover:shadow-[0_0_30px_rgba(52,211,153,0.15)]',
-        pink: 'hover:border-pink-500/70 hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]'
+    const gradients = {
+        cyan: 'from-cyan-500/20 via-cyan-500/5 to-transparent',
+        purple: 'from-purple-500/20 via-purple-500/5 to-transparent',
+        blue: 'from-blue-500/20 via-blue-500/5 to-transparent',
+        orange: 'from-orange-500/20 via-orange-500/5 to-transparent',
+        green: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
+        pink: 'from-pink-500/20 via-pink-500/5 to-transparent'
     }
+
+    const borderColors = {
+        cyan: 'border-cyan-500/30 hover:border-cyan-500/70 hover:shadow-[0_0_40px_rgba(34,211,238,0.2)]',
+        purple: 'border-purple-500/30 hover:border-purple-500/70 hover:shadow-[0_0_40px_rgba(192,132,252,0.2)]',
+        blue: 'border-blue-500/30 hover:border-blue-500/70 hover:shadow-[0_0_40px_rgba(96,165,250,0.2)]',
+        orange: 'border-orange-500/30 hover:border-orange-500/70 hover:shadow-[0_0_40px_rgba(251,146,60,0.2)]',
+        green: 'border-emerald-500/30 hover:border-emerald-500/70 hover:shadow-[0_0_40px_rgba(52,211,153,0.2)]',
+        pink: 'border-pink-500/30 hover:border-pink-500/70 hover:shadow-[0_0_40px_rgba(244,114,182,0.2)]'
+    }
+
+    const sizeClasses = {
+        large: 'md:col-span-2 md:row-span-2',
+        medium: 'md:col-span-2',
+        small: ''
+    }
+
+    // Animation delay: large cards first (0), medium (0.3), small (0.5+)
+    const animationDelay = feature.size === 'large' ? 0 : feature.size === 'medium' ? 0.3 : 0.4 + index * 0.1
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: animationDelay, duration: 0.6, ease: 'easeOut' }}
             viewport={{ once: true }}
-            whileHover={{ scale: 1.03, y: -8 }}
-            className={`relative p-6 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 ${borderColors[feature.color]} transition-all duration-500 group`}
+            whileHover={{ scale: 1.02, y: -5 }}
+            className={`relative p-6 md:p-8 rounded-2xl bg-gradient-to-br ${gradients[feature.color]} backdrop-blur-xl border ${borderColors[feature.color]} ${sizeClasses[feature.size]} transition-all duration-500 group overflow-hidden`}
         >
+            {/* Animated SVG Graphics for large card */}
+            {feature.size === 'large' && (
+                <>
+                    {/* Main Code Bracket SVG - bottom right */}
+                    <motion.svg
+                        className="absolute right-4 bottom-4 w-36 h-36 text-cyan-500/20 group-hover:text-cyan-400/50 transition-colors duration-500"
+                        viewBox="0 0 100 100"
+                        fill="none"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        viewport={{ once: true }}
+                    >
+                        {/* Left bracket - animates on scroll */}
+                        <motion.path
+                            d="M30 20L10 50L30 80"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            initial={{ pathLength: 0 }}
+                            whileInView={{ pathLength: 1 }}
+                            transition={{ delay: 0.8, duration: 1 }}
+                            viewport={{ once: true }}
+                        />
+                        {/* Right bracket */}
+                        <motion.path
+                            d="M70 20L90 50L70 80"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            initial={{ pathLength: 0 }}
+                            whileInView={{ pathLength: 1 }}
+                            transition={{ delay: 1, duration: 1 }}
+                            viewport={{ once: true }}
+                        />
+                        {/* Slash */}
+                        <motion.path
+                            d="M55 15L45 85"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            whileInView={{ pathLength: 1 }}
+                            transition={{ delay: 1.2, duration: 0.8 }}
+                            viewport={{ once: true }}
+                        />
+                        {/* Pulsing circle - appears & pulses on HOVER */}
+                        <motion.circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            fill="none"
+                            className="opacity-0 group-hover:opacity-100"
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: [0.95, 1.05, 0.95] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                    </motion.svg>
+
+                    {/* Floating dots - top right, animate on hover */}
+                    <div className="absolute top-6 right-6 opacity-30 group-hover:opacity-80 transition-opacity duration-500">
+                        {[...Array(3)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                className="w-2 h-2 bg-cyan-400 rounded-full mb-2"
+                                initial={{ x: 0 }}
+                                whileHover={{ x: [0, 10, 0] }}
+                                animate={{ opacity: [0.3, 1, 0.3] }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    delay: i * 0.3,
+                                    ease: 'easeInOut'
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Activity bars - right side, animate on hover */}
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-end gap-1 opacity-20 group-hover:opacity-70 transition-opacity duration-500">
+                        {[40, 65, 35, 80, 55, 70, 45].map((h, i) => (
+                            <motion.div
+                                key={i}
+                                className="w-1.5 bg-gradient-to-t from-cyan-500 to-purple-500 rounded-full"
+                                initial={{ height: 0 }}
+                                whileInView={{ height: h * 0.5 }}
+                                whileHover={{ height: h * 0.7 }}
+                                transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
+                                viewport={{ once: true }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Glowing orb - right side, moves on hover */}
+                    <motion.div
+                        className="absolute top-1/2 right-1/4 w-20 h-20 bg-cyan-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                        animate={{ scale: [1, 1.2, 1], x: [0, 10, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+
+                    {/* LEFT SIDE ELEMENTS */}
+
+                    {/* Terminal window SVG - bottom left */}
+                    <motion.svg
+                        className="absolute left-4 bottom-4 w-28 h-28 text-purple-500/15 group-hover:text-purple-400/40 transition-colors duration-500"
+                        viewBox="0 0 100 100"
+                        fill="none"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6, duration: 0.8 }}
+                        viewport={{ once: true }}
+                    >
+                        {/* Terminal box */}
+                        <motion.rect
+                            x="10"
+                            y="15"
+                            width="80"
+                            height="70"
+                            rx="8"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            fill="none"
+                            initial={{ pathLength: 0 }}
+                            whileInView={{ pathLength: 1 }}
+                            transition={{ delay: 0.8, duration: 1.2 }}
+                            viewport={{ once: true }}
+                        />
+                        {/* Terminal prompt > */}
+                        <motion.path
+                            d="M25 45L35 55L25 65"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            initial={{ pathLength: 0 }}
+                            whileInView={{ pathLength: 1 }}
+                            transition={{ delay: 1.2, duration: 0.6 }}
+                            viewport={{ once: true }}
+                        />
+                        {/* Cursor line - blinks on hover */}
+                        <motion.line
+                            x1="45"
+                            y1="55"
+                            x2="70"
+                            y2="55"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            className="opacity-50 group-hover:opacity-100"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                        />
+                        {/* Title bar dots */}
+                        <circle cx="22" cy="25" r="3" fill="currentColor" className="opacity-60" />
+                        <circle cx="32" cy="25" r="3" fill="currentColor" className="opacity-60" />
+                        <circle cx="42" cy="25" r="3" fill="currentColor" className="opacity-60" />
+                    </motion.svg>
+
+                    {/* Floating code lines - left side */}
+                    <div className="absolute left-6 top-1/3 space-y-2 opacity-20 group-hover:opacity-60 transition-opacity duration-500">
+                        {[60, 45, 55, 35].map((w, i) => (
+                            <motion.div
+                                key={i}
+                                className="h-1 bg-gradient-to-r from-purple-500 to-transparent rounded-full"
+                                initial={{ width: 0, opacity: 0 }}
+                                whileInView={{ width: w, opacity: 1 }}
+                                transition={{ delay: 1 + i * 0.15, duration: 0.5 }}
+                                viewport={{ once: true }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Glowing orb - left side */}
+                    <motion.div
+                        className="absolute bottom-1/4 left-1/4 w-16 h-16 bg-purple-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                        animate={{ scale: [1, 1.3, 1], y: [0, -10, 0] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+
+                    {/* BOTTOM CENTER ELEMENT - Animated Progress Ring */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                        <motion.svg
+                            className="w-40 h-40 text-white/5 group-hover:text-white/15 transition-colors duration-700"
+                            viewBox="0 0 100 100"
+                            fill="none"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 1.5, duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            {/* Outer ring - rotates on hover */}
+                            <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="45"
+                                stroke="currentColor"
+                                strokeWidth="0.5"
+                                fill="none"
+                                strokeDasharray="10 5"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                                style={{ originX: '50%', originY: '50%' }}
+                            />
+                            {/* Middle ring - counter rotate */}
+                            <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                stroke="url(#centerGradient)"
+                                strokeWidth="2"
+                                fill="none"
+                                strokeDasharray="60 200"
+                                strokeLinecap="round"
+                                className="opacity-30 group-hover:opacity-80"
+                                animate={{ rotate: -360 }}
+                                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                                style={{ originX: '50%', originY: '50%' }}
+                            />
+                            {/* Inner pulsing circle */}
+                            <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="20"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1"
+                                className="opacity-0 group-hover:opacity-60"
+                                animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.2, 0.6, 0.2] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                            {/* Center dot */}
+                            <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="3"
+                                fill="currentColor"
+                                className="opacity-20 group-hover:opacity-80"
+                                animate={{ scale: [1, 1.5, 1] }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                            {/* Gradient definition */}
+                            <defs>
+                                <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#22d3ee" />
+                                    <stop offset="100%" stopColor="#a855f7" />
+                                </linearGradient>
+                            </defs>
+                        </motion.svg>
+                    </div>
+                </>
+            )}
+
+            {/* Glow overlay */}
             <motion.div
-                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             />
-            <div className="relative z-10">
+
+            <div className="relative z-10 h-full flex flex-col">
+                {/* Icon - pops up on scroll, moves right on hover */}
                 <motion.div
-                    className="text-4xl mb-4"
-                    whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.4 }}
+                    className={`${feature.size === 'large' ? 'text-6xl' : 'text-4xl'} mb-4 w-fit`}
+                    initial={{ scale: 0, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    whileHover={{ x: 15, scale: 1.1 }}
+                    transition={{ delay: animationDelay + 0.2, duration: 0.3, type: 'spring', stiffness: 200 }}
+                    viewport={{ once: true }}
                 >
                     {feature.icon}
                 </motion.div>
-                <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-sm text-slate-400">{feature.desc}</p>
+                <h3 className={`${feature.size === 'large' ? 'text-2xl' : 'text-lg'} font-bold text-white mb-2`}>{feature.title}</h3>
+                <p className={`${feature.size === 'large' ? 'text-base' : 'text-sm'} text-slate-400`}>{feature.desc}</p>
             </div>
         </motion.div>
     )
@@ -439,37 +748,41 @@ export default function Landing() {
 
                 {/* CTA */}
                 <div className="hero-cta mt-10 flex flex-col sm:flex-row gap-4">
-                    <SignInButton mode="modal">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="relative px-10 py-4 rounded-xl font-bold text-lg overflow-hidden group"
-                        >
-                            <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500"
-                            />
-                            <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-400 blur-xl opacity-50 group-hover:opacity-80 transition-opacity"
-                            />
-                            <span className="relative z-10 text-white flex items-center gap-2">
-                                Start Tracking
-                                <motion.span
-                                    animate={{ x: [0, 5, 0] }}
-                                    transition={{ duration: 1.5, repeat: Infinity }}
-                                >
-                                    →
-                                </motion.span>
-                            </span>
-                        </motion.button>
-                    </SignInButton>
+                    <MagneticButton strength={0.4}>
+                        <SignInButton mode="modal">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="relative px-10 py-4 rounded-xl font-bold text-lg overflow-hidden group"
+                            >
+                                <motion.div
+                                    className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500"
+                                />
+                                <motion.div
+                                    className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-400 blur-xl opacity-50 group-hover:opacity-80 transition-opacity"
+                                />
+                                <span className="relative z-10 text-white flex items-center gap-2">
+                                    Start Tracking
+                                    <motion.span
+                                        animate={{ x: [0, 5, 0] }}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                    >
+                                        →
+                                    </motion.span>
+                                </span>
+                            </motion.button>
+                        </SignInButton>
+                    </MagneticButton>
 
-                    <motion.a
-                        href="#features"
-                        whileHover={{ scale: 1.03 }}
-                        className="px-10 py-4 rounded-xl border border-white/20 text-white font-semibold text-lg hover:bg-white/5 hover:border-white/40 transition-all text-center"
-                    >
-                        Explore Features
-                    </motion.a>
+                    <MagneticButton strength={0.3}>
+                        <motion.a
+                            href="#features"
+                            whileHover={{ scale: 1.03 }}
+                            className="px-10 py-4 rounded-xl border border-white/20 text-white font-semibold text-lg hover:bg-white/5 hover:border-white/40 transition-all text-center block"
+                        >
+                            Explore Features
+                        </motion.a>
+                    </MagneticButton>
                 </div>
 
                 {/* Dashboard */}
@@ -619,24 +932,26 @@ export default function Landing() {
                     <p className="text-lg text-slate-500 mb-12">
                         Join developers building consistency and tracking their growth.
                     </p>
-                    <SignInButton mode="modal">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="relative px-12 py-5 rounded-2xl font-bold text-xl overflow-hidden group"
-                        >
-                            <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500"
-                                animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                                transition={{ duration: 5, repeat: Infinity }}
-                                style={{ backgroundSize: '200% 200%' }}
-                            />
-                            <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-blue-400 blur-2xl opacity-40 group-hover:opacity-70 transition-opacity"
-                            />
-                            <span className="relative z-10 text-white">Start For Free →</span>
-                        </motion.button>
-                    </SignInButton>
+                    <MagneticButton strength={0.4}>
+                        <SignInButton mode="modal">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="relative px-12 py-5 rounded-2xl font-bold text-xl overflow-hidden group"
+                            >
+                                <motion.div
+                                    className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500"
+                                    animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                                    transition={{ duration: 5, repeat: Infinity }}
+                                    style={{ backgroundSize: '200% 200%' }}
+                                />
+                                <motion.div
+                                    className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-blue-400 blur-2xl opacity-40 group-hover:opacity-70 transition-opacity"
+                                />
+                                <span className="relative z-10 text-white">Start For Free →</span>
+                            </motion.button>
+                        </SignInButton>
+                    </MagneticButton>
                 </motion.div>
             </section>
 
