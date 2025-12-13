@@ -51,7 +51,7 @@ app.use(cors({
 // Rate Limiting - 100 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 2000, // Limit each IP to 2000 requests per window
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
@@ -64,7 +64,7 @@ app.use('/api/', limiter);
 // Stricter rate limit for AI endpoints
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30, // Only 30 AI requests per 15 minutes
+  max: 100, // Only 100 AI requests per 15 minutes
   message: {
     success: false,
     error: 'AI rate limit exceeded. Please wait before making more requests.',

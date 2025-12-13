@@ -2,6 +2,7 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import { logsApi, projectsApi, healthApi } from '../services/api'
+import LoadingText from '../components/ui/LoadingText'
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -88,7 +89,7 @@ export default function Dashboard() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-slate-400">Loading dashboard...</div>
+                <LoadingText />
             </div>
         )
     }

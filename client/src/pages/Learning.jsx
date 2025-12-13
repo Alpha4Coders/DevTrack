@@ -4,7 +4,7 @@ import Button from '../components/ui/Button'
 import { logsApi } from '../services/api'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-
+import LoadingText from '../components/ui/LoadingText'
 // Helper to format dates - handles both strings and Firestore Timestamps
 const formatDate = (date) => {
     if (!date) return 'Unknown date'
@@ -163,10 +163,16 @@ export default function Learning() {
         }
     }
 
+
+
+// ... existing imports
+
+// ... inside component
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-slate-400">Loading...</div>
+                <LoadingText />
             </div>
         )
     }
