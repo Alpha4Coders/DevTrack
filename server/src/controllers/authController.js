@@ -22,28 +22,75 @@ const syncUser = async (req, res, next) => {
             throw new APIError('User not found in Clerk', 404);
         }
 
-        // Extract GitHub data if connected
-        const githubAccount = clerkUser.externalAccounts?.find(
-            (acc) => acc.provider === 'github'
-        );
+        // Debug: Log FULL Clerk user structure
+        console.log('🔍 FULL Clerk user object keys:', Object.keys(clerkUser));
+        console.log('🔍 Clerk externalAccounts:', JSON.stringify(clerkUser.externalAccounts, null, 2));
+
+        // Try multiple ways to find GitHub username
+        let githubUsername = null;
+        let githubId = null;
+        let githubAccount = null;
+
+        // Method 1: Check externalAccounts array
+        if (clerkUser.externalAccounts && Array.isArray(clerkUser.externalAccounts)) {
+            // Try different provider names
+            githubAccount = clerkUser.externalAccounts.find(
+                (acc) => acc.provider === 'github' ||
+                    acc.provider === 'oauth_github' ||
+                    acc.provider?.toLowerCase().includes('github')
+            );
+
+            if (githubAccount) {
+                githubUsername = githubAccount.username || githubAccount.providerUserId || null;
+                githubId = githubAccount.externalId || githubAccount.providerUserId || null;
+                console.log('✅ Found GitHub from externalAccounts:', { githubUsername, githubId });
+            }
+        }
+
+        // Method 2: Check if Clerk user has a username property (often set from GitHub)
+        if (!githubUsername && clerkUser.username) {
+            githubUsername = clerkUser.username;
+            console.log('✅ Using Clerk username:', githubUsername);
+        }
+
+        // Method 3: Check primaryWeb3Wallet or other OAuth fields
+        if (!githubUsername && clerkUser.primaryUsername) {
+            githubUsername = clerkUser.primaryUsername;
+            console.log('✅ Using primaryUsername:', githubUsername);
+        }
+
+        console.log('🐙 Final GitHub data:', { githubUsername, githubId });
 
         // Try to get GitHub OAuth token for private repo access
         let githubAccessToken = null;
-        if (githubAccount) {
-            try {
-                // Get OAuth access token from Clerk
-                const oauthTokens = await clerkClient.users.getUserOauthAccessToken(
-                    userId,
-                    'oauth_github'
-                );
-                if (oauthTokens?.data?.[0]?.token) {
-                    githubAccessToken = oauthTokens.data[0].token;
-                    console.log('✅ GitHub OAuth token retrieved for user:', userId);
+        try {
+            // Get OAuth access token from Clerk
+            const oauthTokens = await clerkClient.users.getUserOauthAccessToken(
+                userId,
+                'oauth_github'
+            );
+            console.log('🔐 OAuth tokens response:', JSON.stringify(oauthTokens?.data, null, 2));
+
+            if (oauthTokens?.data?.[0]?.token) {
+                githubAccessToken = oauthTokens.data[0].token;
+                console.log('✅ GitHub OAuth token retrieved');
+
+                // If we got a token but no username, try to fetch from GitHub API
+                if (!githubUsername && githubAccessToken) {
+                    try {
+                        const { Octokit } = require('octokit');
+                        const octokit = new Octokit({ auth: githubAccessToken });
+                        const { data: ghUser } = await octokit.rest.users.getAuthenticated();
+                        githubUsername = ghUser.login;
+                        githubId = String(ghUser.id);
+                        console.log('✅ Got username from GitHub API:', githubUsername);
+                    } catch (ghErr) {
+                        console.warn('⚠️ Could not fetch from GitHub API:', ghErr.message);
+                    }
                 }
-            } catch (tokenErr) {
-                console.warn('⚠️ Could not retrieve GitHub OAuth token:', tokenErr.message);
-                // Continue without OAuth token - will fall back to PAT for public repos
             }
+        } catch (tokenErr) {
+            console.warn('⚠️ Could not retrieve GitHub OAuth token:', tokenErr.message);
         }
 
         const userData = {
@@ -51,9 +98,9 @@ const syncUser = async (req, res, next) => {
             email: clerkUser.emailAddresses?.[0]?.emailAddress || null,
             name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
             avatarUrl: clerkUser.imageUrl || null,
-            githubUsername: githubAccount?.username || null,
-            githubId: githubAccount?.externalId || null,
-            githubAccessToken: githubAccessToken, // Store for private repo access
+            githubUsername: githubUsername,
+            githubId: githubId,
+            githubAccessToken: githubAccessToken,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             lastStartTime: null,

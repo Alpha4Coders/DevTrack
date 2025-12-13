@@ -68,11 +68,29 @@ const getCommits = async (req, res, next) => {
         const user = userDoc.data();
 
         if (!user.githubUsername) {
-            throw new APIError('GitHub account not connected', 400);
+            // Return empty array instead of error - more graceful for dashboard
+            console.log('ℹ️ User has no GitHub username linked');
+            return res.status(200).json({
+                success: true,
+                data: {
+                    username: null,
+                    days,
+                    totalCommits: 0,
+                    commits: [],
+                    streak: 0,
+                    message: 'GitHub account not linked. Add your GitHub username in profile settings.'
+                },
+            });
         }
 
-        const githubService = new GitHubService();
-        const commits = await githubService.getRecentCommits(user.githubUsername, days);
+        // Use user's OAuth token if available for better rate limits
+        const githubService = new GitHubService(user.githubAccessToken || null);
+        const result = await githubService.getRecentCommits(user.githubUsername, days);
+
+        // Handle both old array format and new object format
+        const commits = Array.isArray(result) ? result : (result.commits || []);
+        const streak = result.streak || 0;
+        const totalContributions = result.totalContributions || commits.length;
 
         res.status(200).json({
             success: true,
@@ -80,6 +98,8 @@ const getCommits = async (req, res, next) => {
                 username: user.githubUsername,
                 days,
                 totalCommits: commits.length,
+                totalContributions,
+                streak,
                 commits,
             },
         });

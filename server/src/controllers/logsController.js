@@ -246,24 +246,90 @@ const getStats = async (req, res, next) => {
         const totalLogs = logs.length;
 
         // Get unique dates to calculate streak
-        const dates = logs.map((log) => log.date).sort();
+        // Ensure we only look at the YYYY-MM-DD part, ignoring time/timezone variances
+        const dates = logs.map((log) => {
+            if (!log.date) return null;
+            // Handle Firestore timestamp, Date object, or string
+            let dateStr;
+            if (log.date._seconds) {
+                dateStr = new Date(log.date._seconds * 1000).toISOString().split('T')[0];
+            } else if (log.date instanceof Date) {
+                // Use local date to avoid UTC shifts if possible, or consistent ISO
+                // Better to use a consistent extractor. Since earlier we switched to local for current checks, 
+                // let's try to stick to the raw string if it's already YYYY-MM-DD, 
+                // otherwise normalize.
+                dateStr = log.date.toISOString().split('T')[0];
+            } else {
+                // Assume string, take first 10 chars (YYYY-MM-DD)
+                dateStr = String(log.date).split('T')[0];
+            }
+            return dateStr;
+        }).filter(Boolean).sort();
+
         const uniqueDates = [...new Set(dates)];
 
         // Calculate current streak
         let streak = 0;
-        const today = new Date().toISOString().split('T')[0];
 
-        for (let i = uniqueDates.length - 1; i >= 0; i--) {
-            const logDate = uniqueDates[i];
-            const expectedDate = new Date();
-            expectedDate.setDate(expectedDate.getDate() - (uniqueDates.length - 1 - i));
+        // Use local date format to match how dates are stored (YYYY-MM-DD)
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-            if (logDate === expectedDate.toISOString().split('T')[0]) {
-                streak++;
+        // Sort dates in descending order (newest first)
+        const sortedDates = [...uniqueDates].sort().reverse();
+
+        // Debug logging
+        console.log('=== Streak Calculation Debug ===');
+        console.log('Today (local):', todayStr);
+        console.log('All log dates:', sortedDates);
+
+        // Check if we have an entry for today or yesterday
+        const yesterdayDate = new Date(now);
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayStr = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
+
+        console.log('Yesterday:', yesterdayStr);
+        console.log('Has today entry:', sortedDates.includes(todayStr));
+        console.log('Has yesterday entry:', sortedDates.includes(yesterdayStr));
+
+        // Start counting from today or yesterday
+        let checkDate = new Date(now);
+
+        // Helper to get local date string
+        const getLocalDateStr = (date) => {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        };
+
+        // If no entry today, check if there's one yesterday to continue the streak
+        if (!sortedDates.includes(todayStr)) {
+            if (sortedDates.includes(yesterdayStr)) {
+                // Start from yesterday
+                checkDate = new Date(yesterdayDate);
             } else {
-                break;
+                // No recent entries, streak is 0
+                streak = 0;
+                console.log('No entry today or yesterday, streak = 0');
             }
         }
+
+        // Count consecutive days
+        const startDateStr = getLocalDateStr(checkDate);
+        if (sortedDates.includes(startDateStr)) {
+            while (true) {
+                const checkStr = getLocalDateStr(checkDate);
+                if (sortedDates.includes(checkStr)) {
+                    streak++;
+                    console.log('Counting streak day:', checkStr, '-> streak now:', streak);
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    console.log('Break at:', checkStr, '(not found)');
+                    break;
+                }
+            }
+        }
+
+        console.log('Final streak:', streak);
+        console.log('=================================');
 
         // Count tags
         const tagCounts = {};

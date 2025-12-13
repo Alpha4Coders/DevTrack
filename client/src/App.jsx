@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Learning from './pages/Learning'
 import Projects from './pages/Projects'
 import Chat from './pages/Chat'
+import SystemInfo from './pages/SystemInfo'
 
 function App() {
     return (
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/learning" element={<Learning />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/system-info" element={<SystemInfo />} />
             </Route>
 
             {/* Preview Landing Page (for testing while signed in) */}

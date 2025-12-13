@@ -48,27 +48,29 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate Limiting - 100 requests per 15 minutes
+// Rate Limiting - 500 requests per 15 minutes (increased for dev with React StrictMode)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 500, // Limit each IP to 500 requests per window (was 100)
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development', // Skip rate limit in dev
 });
 app.use('/api/', limiter);
 
 // Stricter rate limit for AI endpoints
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30, // Only 30 AI requests per 15 minutes
+  max: 100, // 100 AI requests per 15 minutes (was 30)
   message: {
     success: false,
     error: 'AI rate limit exceeded. Please wait before making more requests.',
   },
+  skip: (req) => process.env.NODE_ENV === 'development', // Skip rate limit in dev
 });
 app.use('/api/gemini/', aiLimiter);
 

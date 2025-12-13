@@ -34,9 +34,17 @@ DevTrack is a full-stack application that helps developers track their learning 
 - Support for **private repositories** via OAuth
 
 ### 📊 Dashboard
-- Quick stats overview (projects, logs, streaks)
+- **Animated pill-shaped navbar** with Framer Motion
+- Quick stats overview (streaks, commits, skills)
+- **Weekly activity chart** with gradient bars
+- **30-day streak grid** visualization
 - Recent activity timeline
-- Backend health status monitoring
+
+### ℹ️ System Info Page
+- Explains how streak counter works
+- Documents progress tracking methodology
+- Learning entry guidelines
+- Statistics calculation reference
 
 ### 🤖 AI Chat Assistant
 - Context-aware coding help
@@ -75,12 +83,13 @@ DevTrack/
 │   ├── src/
 │   │   ├── components/         # Reusable UI components
 │   │   │   ├── ui/             # Button, Card, Badge, etc.
-│   │   │   └── layout/         # AppLayout, Sidebar
+│   │   │   └── layout/         # AppLayout, Navbar
 │   │   ├── pages/              # Page components
 │   │   │   ├── Dashboard.jsx
 │   │   │   ├── Learning.jsx
 │   │   │   ├── Projects.jsx
 │   │   │   ├── Chat.jsx
+│   │   │   ├── SystemInfo.jsx
 │   │   │   └── Landing.jsx
 │   │   ├── services/           # API service (Axios)
 │   │   ├── App.jsx
@@ -91,15 +100,7 @@ DevTrack/
 │   ├── src/
 │   │   ├── config/             # Firebase config
 │   │   ├── controllers/        # Route controllers
-│   │   │   ├── authController.js
-│   │   │   ├── geminiController.js
-│   │   │   ├── githubController.js
-│   │   │   ├── logsController.js
-│   │   │   └── projectController.js
 │   │   ├── services/           # Business logic
-│   │   │   ├── githubService.js    # GitHub API integration
-│   │   │   ├── groqService.js      # AI analysis
-│   │   │   └── geminiService.js    # Gemini fallback
 │   │   ├── routes/             # Express routes
 │   │   ├── middleware/         # Auth, validation, errors
 │   │   └── app.js
@@ -157,9 +158,6 @@ GITHUB_PAT=ghp_xxxxxxxxxxxx
 
 # AI - Groq
 GROQ_API_KEY=gsk_xxxxxxxxxxxx
-
-# Optional - Gemini fallback
-GEMINI_API_KEY=your_gemini_key
 ```
 
 **Client `.env`:**
@@ -167,12 +165,6 @@ GEMINI_API_KEY=your_gemini_key
 VITE_API_URL=http://localhost:5000/api
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
 ```
-
-### Clerk Setup for Private Repos
-
-1. Go to your Clerk Dashboard → User & Authentication → Social Connections
-2. Enable GitHub and add the `repo` scope for private repository access
-3. Users will need to reconnect their GitHub account to grant access
 
 ### Running the Application
 
@@ -183,48 +175,6 @@ npm run dev
 # Start the frontend (from client directory)
 npm run dev
 ```
-
----
-
-## 📋 API Endpoints
-
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/sync` | Sync user from Clerk to Firestore |
-| `GET` | `/api/auth/me` | Get current user profile |
-
-### Learning Logs
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/logs` | Get all learning entries |
-| `POST` | `/api/logs` | Create new entry |
-| `PUT` | `/api/logs/:id` | Update entry |
-| `DELETE` | `/api/logs/:id` | Delete entry |
-| `GET` | `/api/logs/stats` | Get learning statistics |
-
-### Projects
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects` | Get all projects |
-| `POST` | `/api/projects` | Create project (auto-analyzes if GitHub URL) |
-| `PUT` | `/api/projects/:id` | Update project |
-| `DELETE` | `/api/projects/:id` | Delete project |
-| `GET` | `/api/projects/stats` | Get project statistics |
-
-### GitHub
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/github/activity` | Get user's GitHub activity |
-| `GET` | `/api/github/commits` | Get recent commits |
-| `GET` | `/api/github/repos` | Get user repositories |
-| `GET` | `/api/github/repo/:owner/:repo` | Analyze specific repo |
-
-### AI Chat
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/gemini/chat` | Chat with AI assistant |
-| `POST` | `/api/gemini/analyze-project` | Analyze project with AI |
 
 ---
 
@@ -241,7 +191,8 @@ npm run dev
 - [x] AI Chat assistant
 - [x] Dashboard with stats
 - [x] Beautiful landing page with animations
-- [ ] Streak tracking & contribution heatmaps
+- [x] Streak tracking & contribution heatmaps
+- [x] System info documentation page
 - [ ] Export/share progress reports
 - [ ] Push notifications
 - [ ] Mobile app

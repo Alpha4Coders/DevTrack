@@ -334,9 +334,129 @@ class GitHubService {
     }
 
     /**
-     * Get recent commits across user's repos
+     * Get user's contribution data using GraphQL API (includes private contributions)
+     */
+    async getContributions(username, days = 30) {
+        try {
+            const to = new Date();
+            const from = new Date();
+            from.setDate(from.getDate() - days);
+
+            const query = `
+                query($username: String!, $from: DateTime!, $to: DateTime!) {
+                    user(login: $username) {
+                        contributionsCollection(from: $from, to: $to) {
+                            totalCommitContributions
+                            totalPullRequestContributions
+                            totalIssueContributions
+                            contributionCalendar {
+                                totalContributions
+                                weeks {
+                                    contributionDays {
+                                        date
+                                        contributionCount
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            `;
+
+            const response = await this.octokit.graphql(query, {
+                username,
+                from: from.toISOString(),
+                to: to.toISOString(),
+            });
+
+            const collection = response.user?.contributionsCollection;
+            if (!collection) {
+                console.log('⚠️ No contributions data from GraphQL');
+                return null;
+            }
+
+            // Flatten the days from weeks
+            const allDays = collection.contributionCalendar.weeks.flatMap(w => w.contributionDays);
+
+            // Calculate streak
+            let streak = 0;
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+            // Sort by date descending
+            const sortedDays = allDays.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Find streak starting from today or yesterday
+            let checkDate = new Date();
+            const todayData = sortedDays.find(d => d.date === today);
+            const yesterdayData = sortedDays.find(d => d.date === yesterday);
+
+            if (!todayData?.contributionCount && !yesterdayData?.contributionCount) {
+                streak = 0;
+            } else {
+                if (!todayData?.contributionCount) {
+                    checkDate.setDate(checkDate.getDate() - 1);
+                }
+
+                for (const day of sortedDays) {
+                    const checkStr = checkDate.toISOString().split('T')[0];
+                    if (day.date === checkStr && day.contributionCount > 0) {
+                        streak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else if (day.date < checkStr) {
+                        break;
+                    }
+                }
+            }
+
+            console.log('✅ GraphQL contributions:', {
+                totalCommits: collection.totalCommitContributions,
+                streak,
+                daysWithActivity: allDays.filter(d => d.contributionCount > 0).length
+            });
+
+            return {
+                totalCommits: collection.totalCommitContributions,
+                totalPRs: collection.totalPullRequestContributions,
+                totalIssues: collection.totalIssueContributions,
+                totalContributions: collection.contributionCalendar.totalContributions,
+                streak,
+                days: allDays,
+            };
+        } catch (error) {
+            console.error('Error fetching contributions via GraphQL:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Get recent commits across user's repos (falls back to GraphQL if REST returns empty)
      */
     async getRecentCommits(username, days = 7) {
+        // First try GraphQL for accurate contribution data
+        try {
+            const contributions = await this.getContributions(username, days);
+            if (contributions && contributions.totalCommits > 0) {
+                // Convert contribution days to commit-like objects for compatibility
+                const commits = contributions.days
+                    .filter(d => d.contributionCount > 0)
+                    .map(d => ({
+                        date: d.date + 'T12:00:00Z',
+                        count: d.contributionCount,
+                        message: `${d.contributionCount} contribution(s)`,
+                    }));
+
+                return {
+                    commits,
+                    streak: contributions.streak,
+                    totalContributions: contributions.totalContributions,
+                };
+            }
+        } catch (err) {
+            console.log('GraphQL failed, falling back to REST:', err.message);
+        }
+
+        // Fallback to REST API
         const since = new Date();
         since.setDate(since.getDate() - days);
 
@@ -366,10 +486,10 @@ class GitHubService {
                 (c) => new Date(c.date) >= since
             );
 
-            return filteredCommits.slice(0, 50);
+            return { commits: filteredCommits.slice(0, 50), streak: 0 };
         } catch (error) {
             console.error('Error fetching commits:', error.message);
-            return [];
+            return { commits: [], streak: 0 };
         }
     }
 

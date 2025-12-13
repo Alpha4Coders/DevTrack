@@ -69,11 +69,18 @@ export const githubApi = {
     getRepos: (limit = 10) => api.get('/github/repos', { params: { limit } }),
     getLanguages: () => api.get('/github/languages'),
     analyzeRepo: (owner, repo) => api.get(`/github/repo/${owner}/${repo}`),
+    getActivity: () => api.get('/github/activity'),
+    getCommits: (days = 30) => api.get('/github/commits', { params: { days } }),
 };
 
 export const geminiApi = {
     chat: (message, context) => api.post('/gemini/chat', { message, context }),
     analyzeProject: (repoInfo) => api.post('/gemini/analyze-project', { repoInfo }),
+};
+
+export const authApi = {
+    sync: () => api.post('/auth/sync'),
+    getMe: () => api.get('/auth/me'),
 };
 
 export default api;
