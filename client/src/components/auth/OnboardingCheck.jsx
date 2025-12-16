@@ -37,12 +37,16 @@ const OnboardingCheck = ({ children }) => {
                     navigate('/onboarding', { replace: true });
                 }
             } catch (error) {
-                // If preferences don't exist, user needs onboarding
+                // Only redirect to onboarding if preferences explicitly don't exist (404)
+                // For other errors (network, auth), just continue to dashboard
                 if (error.response?.status === 404) {
+                    console.log('No preferences found, redirecting to onboarding');
                     setShouldRedirect(true);
                     navigate('/onboarding', { replace: true });
+                } else {
+                    // Log but don't redirect for other errors (network issues, etc.)
+                    console.warn('Error checking onboarding status (continuing to dashboard):', error.message);
                 }
-                console.error('Error checking onboarding status:', error);
             } finally {
                 setChecking(false);
             }
