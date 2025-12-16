@@ -43,8 +43,8 @@ const WorkPatternStep = ({ value, onChange, onNext, onBack }) => (
             <button
                 onClick={() => onChange('frequent')}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === 'frequent'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -59,8 +59,8 @@ const WorkPatternStep = ({ value, onChange, onNext, onBack }) => (
             <button
                 onClick={() => onChange('end-only')}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === 'end-only'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -111,8 +111,8 @@ const AutoEndStep = ({ value, onChange, onNext, onBack }) => {
                         key={option.value}
                         onClick={() => onChange(option.value)}
                         className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === option.value
-                                ? 'border-purple-500 bg-purple-500/10'
-                                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                             }`}
                     >
                         <p className="font-semibold text-white">{option.label}</p>
@@ -150,8 +150,8 @@ const ReminderStep = ({ mode, fixedTime, onModeChange, onTimeChange, onNext, onB
             <button
                 onClick={() => onModeChange('adaptive')}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${mode === 'adaptive'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -166,8 +166,8 @@ const ReminderStep = ({ mode, fixedTime, onModeChange, onTimeChange, onNext, onB
             <button
                 onClick={() => onModeChange('fixed')}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${mode === 'fixed'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -237,8 +237,8 @@ const GoalStep = ({ value, onChange, onNext, onBack }) => {
                         key={goal.value}
                         onClick={() => onChange(goal.value)}
                         className={`p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === goal.value
-                                ? 'border-purple-500 bg-purple-500/10'
-                                : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                             }`}
                     >
                         <span className="text-xl mr-3">{goal.emoji}</span>
@@ -290,8 +290,8 @@ const BreakDetectionStep = ({ value, onChange, onNext, onBack }) => (
             <button
                 onClick={() => onChange(true)}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === true
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -306,8 +306,8 @@ const BreakDetectionStep = ({ value, onChange, onNext, onBack }) => (
             <button
                 onClick={() => onChange(false)}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${value === false
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-purple-500 bg-purple-500/10'
+                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -439,7 +439,7 @@ const Onboarding = () => {
         const checkOnboardingStatus = async () => {
             try {
                 const response = await preferencesApi.get();
-                if (response.data.data.onboardingCompleted) {
+                if (response.data?.data?.onboardingCompleted) {
                     navigate('/dashboard', { replace: true });
                 }
             } catch (error) {

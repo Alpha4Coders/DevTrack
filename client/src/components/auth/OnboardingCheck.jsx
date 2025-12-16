@@ -30,9 +30,10 @@ const OnboardingCheck = ({ children }) => {
 
             try {
                 const response = await preferencesApi.get();
-                const { onboardingCompleted } = response.data.data;
+                const onboardingCompleted = response.data?.data?.onboardingCompleted;
 
                 if (!onboardingCompleted) {
+                    console.log('Onboarding not completed, redirecting...');
                     setShouldRedirect(true);
                     navigate('/onboarding', { replace: true });
                 }
