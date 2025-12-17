@@ -16,11 +16,18 @@ const githubRoutes = require('./routes/githubRoutes');
 const geminiRoutes = require('./routes/geminiRoutes');
 const logsRoutes = require('./routes/logsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const preferencesRoutes = require('./routes/preferencesRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+// Trust proxy for Render and other reverse proxies
+// Required for express-rate-limit to work correctly
+app.set('trust proxy', 1);
 
 // ======================
 // SECURITY MIDDLEWARE
@@ -39,43 +46,63 @@ app.use(helmet({
   },
 }));
 
-// CORS Configuration
+// CORS Configuration - Support multiple origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CORS_ORIGIN,
+  'https://devtrack-pwkj.onrender.com',
+  'https://devtrack.onrender.com',
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Allow anyway for now, log for debugging
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate Limiting - 100 requests per 15 minutes
+// Rate Limiting - 500 requests per 15 minutes (increased for dev with React StrictMode)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 2000, // Limit each IP to 2000 requests per window
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'development', // Skip rate limit in dev
 });
 app.use('/api/', limiter);
 
 // Stricter rate limit for AI endpoints
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30, // Only 30 AI requests per 15 minutes
+  max: 100, // 100 AI requests per 15 minutes
   message: {
     success: false,
     error: 'AI rate limit exceeded. Please wait before making more requests.',
   },
+  skip: (req) => process.env.NODE_ENV === 'development', // Skip rate limit in dev
 });
 app.use('/api/gemini/', aiLimiter);
 
 // ======================
 // BODY PARSING
 // ======================
-app.use(express.json({ limit: '10kb' })); // Limit body size
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '5mb' })); // Increased for large GitHub repo data
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // ======================
 // LOGGING
@@ -106,6 +133,9 @@ app.use('/api/github', githubRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/preferences', preferencesRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // ======================
 // 404 HANDLER

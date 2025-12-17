@@ -65,6 +65,8 @@ const collections = {
     users: () => getFirestore().collection('users'),
     logs: () => getFirestore().collection('logs'),
     activities: () => getFirestore().collection('activities'),
+    projects: () => getFirestore().collection('projects'),
+    tasks: () => getFirestore().collection('tasks'),
 };
 
 module.exports = {
