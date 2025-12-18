@@ -11,16 +11,49 @@ const api = axios.create({
     },
 });
 
+// Helper function to get Clerk token with retry
+const getClerkToken = async (retries = 3, delay = 100) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            // Method 1: Try window.Clerk.session
+            if (window.Clerk?.session) {
+                const token = await window.Clerk.session.getToken();
+                if (token) return token;
+            }
+
+            // Method 2: Try window.Clerk.__clerk_frontend_api (for newer versions)
+            if (window.Clerk?.client?.sessions?.[0]) {
+                const session = window.Clerk.client.sessions[0];
+                if (session?.getToken) {
+                    const token = await session.getToken();
+                    if (token) return token;
+                }
+            }
+
+            // If Clerk is loading, wait and retry
+            if (window.Clerk && !window.Clerk.session && i < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+        } catch (error) {
+            console.warn(`Attempt ${i + 1} to get Clerk token failed:`, error.message);
+            if (i < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+    return null;
+};
+
 // Request interceptor to add Clerk auth token
 api.interceptors.request.use(
     async (config) => {
         try {
-            // Get token from Clerk
-            if (window.Clerk?.session) {
-                const token = await window.Clerk.session.getToken();
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
+            const token = await getClerkToken();
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                console.warn('No Clerk auth token available for request:', config.url);
             }
         } catch (error) {
             console.error('Error getting auth token:', error);
