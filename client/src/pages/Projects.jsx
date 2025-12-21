@@ -62,6 +62,7 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
     )
 }
 
+
 // Project Card Component
 function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analyzing, delay = 0 }) {
     const statusColors = {
