@@ -63,7 +63,7 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
 }
 
 // Project Card Component
-function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, onUndo, analyzing, delay = 0 }) {
+function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analyzing, delay = 0 }) {
     const statusColors = {
         Active: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
         Completed: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' },
@@ -165,17 +165,7 @@ function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, onUnd
                 <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
                     <span className="text-sm text-slate-500">{project.commits || 0} commits</span>
                     <div className="flex gap-2">
-                        {project.status === 'Completed' ? (
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                layout
-                                onClick={() => onUndo(project)}
-                                className="px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 transition-colors text-xs font-medium border border-orange-500/20"
-                            >
-                                Undo
-                            </motion.button>
-                        ) : (
+                        {project.status !== 'Completed' && (
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -806,18 +796,7 @@ export default function Projects() {
         }
     }
 
-    const handleUndo = async (project) => {
-        try {
-            await projectsApi.update(project.id, {
-                status: 'Active'
-            })
-            fetchProjects()
-            fetchStats()
-        } catch (err) {
-            console.error('Error undoing project completion:', err)
-            alert('Failed to undo project completion')
-        }
-    }
+
 
     if (loading) {
         return (
@@ -907,7 +886,7 @@ export default function Projects() {
                                 }}
                                 onReanalyze={handleReanalyze}
                                 onComplete={handleComplete}
-                                onUndo={handleUndo}
+
                                 analyzing={analyzing}
                                 delay={index * 0.1}
                             />
