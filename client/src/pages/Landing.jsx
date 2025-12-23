@@ -682,7 +682,6 @@ export default function Landing() {
         return () => ctx.revert()
     }, [])
 
-    const title = "DEVTRACK"
 
     return (
         <div className="relative min-h-screen bg-black overflow-x-hidden">
@@ -720,15 +719,27 @@ export default function Landing() {
                 </motion.div>
 
                 {/* GIANT Title - Using Syne font */}
-                <h1 className="text-[14vw] md:text-[10vw] lg:text-[8vw] font-black leading-[0.85] tracking-tighter text-center" style={{ fontFamily: 'Syne, sans-serif' }}>
-                    {title.split('').map((char, i) => (
-                        <span
-                            key={i}
-                            className="hero-letter inline-block bg-gradient-to-b from-white via-slate-200 to-slate-600 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]"
-                        >
-                            {char}
-                        </span>
-                    ))}
+                <h1 className="text-[14vw] md:text-[10vw] lg:text-[8vw] font-black leading-[0.85] tracking-tighter text-center flex flex-wrap justify-center" style={{ fontFamily: 'Syne, sans-serif' }}>
+                    <span className="whitespace-nowrap">
+                        {"DEV".split('').map((char, i) => (
+                            <span
+                                key={`dev-${i}`}
+                                className="hero-letter inline-block bg-gradient-to-b from-white via-slate-200 to-slate-600 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+                            >
+                                {char}
+                            </span>
+                        ))}
+                    </span>
+                    <span className="whitespace-nowrap">
+                        {"TRACK".split('').map((char, i) => (
+                            <span
+                                key={`track-${i}`}
+                                className="hero-letter inline-block bg-gradient-to-b from-white via-slate-200 to-slate-600 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+                            >
+                                {char}
+                            </span>
+                        ))}
+                    </span>
                 </h1>
 
                 {/* Tagline */}

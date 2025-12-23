@@ -1,5 +1,6 @@
 /// API Configuration for DevTrack Flutter App
 /// Contains base URLs, endpoints, and OAuth configuration
+library;
 
 class ApiConfig {
   // Base URLs
