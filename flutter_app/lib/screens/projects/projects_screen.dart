@@ -13,6 +13,8 @@ class ProjectsScreen extends ConsumerStatefulWidget {
 }
 
 class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
+  String? _expandedProjectId;
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +52,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
                     if (projectState.isLoading && projectState.projects.isEmpty)
                       const Center(child: CircularProgressIndicator())
                     else if (projectState.projects.isEmpty)
-                      _EmptyState(onAddProject: () => _showAddProjectDialog(context))
+                      _EmptyState(
+                          onAddProject: () => _showAddProjectDialog(context))
                     else
                       ..._buildProjectCards(context, projectState.projects),
                     const SizedBox(height: 100),
@@ -92,7 +95,8 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Add New Project', style: Theme.of(context).textTheme.titleLarge),
+            Text('Add New Project',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
             TextField(
               controller: urlController,
@@ -137,165 +141,286 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     );
   }
 
-  List<Widget> _buildProjectCards(BuildContext context, List<Project> projects) {
+  List<Widget> _buildProjectCards(
+      BuildContext context, List<Project> projects) {
     return projects.asMap().entries.map((entry) {
       final project = entry.value;
-      return Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
+      final isExpanded = _expandedProjectId == project.id;
+
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _expandedProjectId = isExpanded ? null : project.id;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isExpanded
+                  ? AppColors.primary.withOpacity(0.5)
+                  : AppColors.border,
+              width: isExpanded ? 1.5 : 1,
+            ),
+            boxShadow: isExpanded
+                ? [
+                    BoxShadow(
                       color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.folder, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(project.name, style: Theme.of(context).textTheme.titleLarge),
-                        if (project.githubUrl != null)
-                          Text(
-                            project.githubUrl!.replaceFirst('https://', ''),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.accent,
-                                ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
-                    onSelected: (value) {
-                      if (value == 'analyze') {
-                        ref.read(projectStateProvider.notifier).analyzeProject(project.id);
-                      } else if (value == 'delete') {
-                        ref.read(projectStateProvider.notifier).deleteProject(project.id);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'view', child: Text('View Details')),
-                      const PopupMenuItem(value: 'analyze', child: Text('Re-analyze')),
-                      const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Progress
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Progress', style: Theme.of(context).textTheme.bodyMedium),
-                      Text('${(project.progress * 100).toInt()}%',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: AppColors.accentGreen,
-                              )),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: project.progress,
-                      backgroundColor: AppColors.border,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.accentGreen),
-                      minHeight: 8,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Languages
-            if (project.languages.isNotEmpty)
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    )
+                  ]
+                : [],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header (Always Visible)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: project.languages
-                      .map((lang) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(lang, style: Theme.of(context).textTheme.bodySmall),
-                          ))
-                      .toList(),
-                ),
-              ),
-
-            // AI Analysis
-            if (project.aiAnalysis != null)
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                ),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        isExpanded ? Icons.folder_open : Icons.folder,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isExpanded
+                                ? 'Tap to collapse'
+                                : 'Tap to see details',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textMuted,
+                                      fontSize: 10,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: project.status == 'Completed'
+                            ? Colors.greenAccent.withOpacity(0.1)
+                            : AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: project.status == 'Completed'
+                              ? Colors.greenAccent.withOpacity(0.2)
+                              : AppColors.primary.withOpacity(0.2),
+                        ),
+                      ),
                       child: Text(
-                        project.aiAnalysis!.summary,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                        project.status.toUpperCase(),
+                        style: TextStyle(
+                          color: project.status == 'Completed'
+                              ? Colors.greenAccent
+                              : AppColors.primary,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-            // Stats
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.border)),
+              // Progress Bar (Always Visible, Compact)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Progress',
+                            style: TextStyle(
+                                color: AppColors.textMuted, fontSize: 11)),
+                        Text('${(project.progress * 100).toInt()}%',
+                            style: const TextStyle(
+                              color: AppColors.accentGreen,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: project.progress,
+                        backgroundColor: AppColors.border,
+                        valueColor:
+                            const AlwaysStoppedAnimation(AppColors.accentGreen),
+                        minHeight: 4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _StatItem(icon: Icons.commit, value: '${project.stats.commits}', label: 'Commits'),
-                  _StatItem(
-                      icon: Icons.merge_type, value: '${project.stats.pullRequests}', label: 'PRs'),
-                  _StatItem(icon: Icons.bug_report, value: '${project.stats.issues}', label: 'Issues'),
-                ],
-              ),
-            ),
-          ],
+
+              // Expandable Content
+              if (isExpanded) ...[
+                const Divider(height: 1, color: AppColors.border),
+
+                // GitHub Link
+                if (project.githubUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.link,
+                            size: 14, color: AppColors.accent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            project.githubUrl!.replaceFirst('https://', ''),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.accent,
+                                      fontSize: 12,
+                                    ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // AI Analysis
+                if (project.aiAnalysis != null)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: AppColors.primary.withOpacity(0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.auto_awesome,
+                                color: AppColors.primary, size: 14),
+                            SizedBox(width: 8),
+                            Text(
+                              'AI STATUS',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          project.aiAnalysis!.summary,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Stats Row
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _StatItem(
+                          icon: Icons.commit,
+                          value: '${project.stats.commits}',
+                          label: 'Commits'),
+                      _StatItem(
+                          icon: Icons.merge_type,
+                          value: '${project.stats.pullRequests}',
+                          label: 'PRs'),
+                      _StatItem(
+                          icon: Icons.bug_report,
+                          value: '${project.stats.issues}',
+                          label: 'Issues'),
+                    ],
+                  ),
+                ),
+
+                // Actions Footer
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(20)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => ref
+                            .read(projectStateProvider.notifier)
+                            .analyzeProject(project.id),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Re-analyze',
+                            style: TextStyle(fontSize: 11)),
+                        style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textMuted),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => ref
+                            .read(projectStateProvider.notifier)
+                            .deleteProject(project.id),
+                        icon: const Icon(Icons.delete_outline,
+                            size: 18, color: Colors.redAccent),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ).animate(delay: (200 + entry.key * 100).ms).fadeIn().slideY(begin: 0.1);
+      ).animate(delay: (entry.key * 50).ms).fadeIn().slideY(begin: 0.05);
     }).toList();
   }
 }
@@ -318,9 +443,11 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Icon(Icons.folder_open, size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
-          Text('No projects yet', style: Theme.of(context).textTheme.titleMedium),
+          Text('No projects yet',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text('Link your GitHub repositories', style: Theme.of(context).textTheme.bodySmall),
+          Text('Link your GitHub repositories',
+              style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: onAddProject,
@@ -338,7 +465,8 @@ class _StatItem extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatItem({required this.icon, required this.value, required this.label});
+  const _StatItem(
+      {required this.icon, required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {

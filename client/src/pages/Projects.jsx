@@ -64,7 +64,7 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
 
 
 // Project Card Component
-function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analyzing, delay = 0 }) {
+function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analyzing, delay = 0, isExpanded, onToggle }) {
     const statusColors = {
         Active: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
         Completed: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' },
@@ -82,29 +82,40 @@ function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analy
             className="group"
         >
             <div
-                className="rounded-2xl p-6 border border-white/10 hover:border-purple-500/30 transition-all duration-300 h-full flex flex-col"
+                className={`rounded-2xl p-6 border ${isExpanded ? 'border-purple-500/50' : 'border-white/10'} hover:border-purple-500/30 transition-all duration-300 flex flex-col`}
                 style={{ background: 'linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95))' }}
             >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-white mb-1 truncate">{project.name}</h3>
-                        <p className="text-slate-400 text-sm line-clamp-2">{project.description || 'No description'}</p>
+                    <div className="flex-1 min-w-0" onClick={onToggle} style={{ cursor: 'pointer' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold text-white truncate">{project.name}</h3>
+                            <motion.span
+                                animate={{ rotate: isExpanded ? 180 : 0 }}
+                                className="text-slate-500 text-xs"
+                            >
+                                ▼
+                            </motion.span>
+                        </div>
+                        <p className={`text-slate-400 text-sm ${isExpanded ? '' : 'truncate'}`}>{project.description || 'No description'}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text} ${status.border} border ml-3 flex-shrink-0`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${status.bg} ${status.text} ${status.border} border ml-3 flex-shrink-0`}>
                         {project.status}
                     </span>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Progress</span>
-                        <span className="text-purple-400 font-semibold">{progress}%</span>
+                {/* Progress Bar (Always visible but compact) */}
+                <div className="mb-2">
+                    <div className="flex justify-between text-[11px] mb-1.5 px-1">
+                        <span className="text-slate-500 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                            Progress
+                        </span>
+                        <span className="text-purple-400 font-bold">{progress}%</span>
                     </div>
-                    <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
                         <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-600"
+                            className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             transition={{ delay: delay + 0.3, duration: 0.8, ease: "easeOut" }}
@@ -112,101 +123,105 @@ function ProjectCard({ project, onEdit, onDelete, onReanalyze, onComplete, analy
                     </div>
                 </div>
 
-                {/* AI Analysis */}
-                {project.aiAnalysis && (
-                    <div className="mb-4 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm">🤖</span>
-                            <span className="text-xs font-medium text-purple-400">AI Analysis</span>
-                            {project.aiAnalysis.commitFrequencyScore !== undefined && (
-                                <span className="ml-auto text-xs text-emerald-400">
-                                    Score: {project.aiAnalysis.commitFrequencyScore}%
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-xs text-slate-300 line-clamp-2">
-                            {project.aiAnalysis.progressSummary || project.aiAnalysis.reasoning || 'Analysis complete'}
-                        </p>
-                        {project.aiAnalysis.nextRecommendedTasks?.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                                {project.aiAnalysis.nextRecommendedTasks.slice(0, 2).map((task, i) => (
-                                    <span key={i} className="px-2 py-0.5 rounded-full bg-white/5 text-xs text-slate-400">
-                                        {task}
-                                    </span>
-                                ))}
+                {/* Expandable Section */}
+                <AnimatePresence>
+                    {isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="pt-4 space-y-4">
+                                {/* AI Analysis (Compact in details) */}
+                                {project.aiAnalysis && (
+                                    <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-sm">🤖</span>
+                                            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">AI Status Report</span>
+                                        </div>
+                                        <p className="text-xs text-slate-300 leading-relaxed italic">
+                                            "{project.aiAnalysis.progressSummary || project.aiAnalysis.reasoning || 'Project is proceeding normally.'}"
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Technologies */}
+                                <div className="flex flex-wrap gap-1.5">
+                                    {(project.technologies || []).map((tech, i) => (
+                                        <span key={i} className="px-2 py-0.5 rounded-lg bg-white/5 text-slate-400 text-[10px] font-medium border border-white/5">
+                                            {tech}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* Detailed Stats Row */}
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                    <div className="flex gap-4 text-[11px]">
+                                        <div className="flex flex-col">
+                                            <span className="text-slate-500 uppercase text-[9px] tracking-tight mb-0.5">Stars</span>
+                                            <span className="text-white font-medium">⭐ {project.githubData?.stars || 0}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-slate-500 uppercase text-[9px] tracking-tight mb-0.5">Commits</span>
+                                            <span className="text-white font-medium">📝 {project.commits || 0}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-slate-500 uppercase text-[9px] tracking-tight mb-0.5">Issues</span>
+                                            <span className="text-white font-medium">🐞 {project.githubData?.openIssues || 0}</span>
+                                        </div>
+                                    </div>
+
+                                    {project.repositoryUrl && (
+                                        <button
+                                            onClick={() => onReanalyze(project)}
+                                            disabled={analyzing}
+                                            className="p-2 rounded-lg bg-white/5 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors disabled:opacity-50"
+                                            title="Re-analyze Repository"
+                                        >
+                                            {analyzing ? '⏳' : '🔄'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Technologies */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {(project.technologies || []).slice(0, 4).map((tech, i) => (
-                        <span key={i} className="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 text-xs font-medium">
-                            {tech}
-                        </span>
-                    ))}
-                    {(project.technologies || []).length > 4 && (
-                        <span className="px-2.5 py-1 rounded-lg bg-white/5 text-slate-400 text-xs">
-                            +{project.technologies.length - 4}
-                        </span>
+                        </motion.div>
                     )}
-                </div>
+                </AnimatePresence>
 
-                {/* GitHub Stats */}
-                {project.githubData && (
-                    <div className="flex gap-4 text-sm text-slate-400 mb-4">
-                        <span className="flex items-center gap-1">⭐ {project.githubData.stars || 0}</span>
-                        <span className="flex items-center gap-1">🍴 {project.githubData.forks || 0}</span>
-                        <span className="flex items-center gap-1">📝 {project.githubData.openIssues || 0}</span>
-                    </div>
-                )}
+                {/* Footer (Actions) */}
+                <div className="mt-auto pt-4 flex items-center justify-between">
+                    <button
+                        onClick={onToggle}
+                        className="text-[10px] font-bold text-slate-500 hover:text-purple-400 uppercase tracking-widest transition-colors"
+                    >
+                        {isExpanded ? 'Hide Details' : 'View Details'}
+                    </button>
 
-                {/* Footer */}
-                <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-sm text-slate-500">{project.commits || 0} commits</span>
                     <div className="flex gap-2">
                         {project.status !== 'Completed' && (
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                layout
-                                onClick={() => onComplete(project)}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 transition-colors text-xs font-medium border border-emerald-500/20"
-                            >
-                                Project Completed
-                            </motion.button>
-                        )}
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {project.repositoryUrl && (
                             <button
-                                onClick={() => onReanalyze(project)}
-                                disabled={analyzing}
-                                className="p-2 rounded-lg bg-white/5 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors disabled:opacity-50"
-                                title="Re-analyze"
+                                onClick={() => onComplete(project)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase transition-colors border border-emerald-500/20"
                             >
-                                {analyzing ? '⏳' : '🔄'}
+                                Done
                             </button>
                         )}
                         <button
                             onClick={() => onEdit(project)}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                            title="Edit"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                         </button>
                         <button
                             onClick={() => onDelete(project.id)}
                             className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                            title="Delete"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -574,6 +589,7 @@ function ProjectForm({ formData, setFormData, onSubmit, onCancel, isEdit, analyz
 export default function Projects() {
     const [projects, setProjects] = useState([])
     const [loading, setLoading] = useState(true)
+    const [expandedProjectId, setExpandedProjectId] = useState(null)
     const [error, setError] = useState(null)
     const [showModal, setShowModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
@@ -780,7 +796,7 @@ export default function Projects() {
             await projectsApi.update(completeConfirm.id, {
                 status: 'Completed'
             })
-            
+
             // Trigger confetti
             confetti({
                 particleCount: 100,
@@ -876,18 +892,19 @@ export default function Projects() {
 
                 {/* Projects Grid */}
                 {projects.length > 0 && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         {projects.map((project, index) => (
                             <ProjectCard
                                 key={project.id}
                                 project={project}
+                                isExpanded={expandedProjectId === project.id}
+                                onToggle={() => setExpandedProjectId(expandedProjectId === project.id ? null : project.id)}
                                 onEdit={handleEdit}
                                 onDelete={() => {
                                     setDeleteConfirm(project.id)
                                 }}
                                 onReanalyze={handleReanalyze}
                                 onComplete={handleComplete}
-
                                 analyzing={analyzing}
                                 delay={index * 0.1}
                             />
