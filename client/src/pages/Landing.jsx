@@ -47,7 +47,7 @@ function MagneticButton({ children, className = "", strength = 0.3 }) {
 
 // Team members
 const teamMembers = [
-  { name: "Vikash Gupta", github: "Vortex-16", role: "Backend & Frontend" },
+  { name: "Vikash Gupta", github: "Vortex-16", role: "Frontend & Backend, AI" },
   {
     name: "Ayush Chowdhury",
     github: "AyushChowdhuryCSE",
@@ -58,7 +58,7 @@ const teamMembers = [
     github: "PixelPioneer404",
     role: "Frontend Developer",
   },
-  { name: "Rajdeep Das", github: "yourajdeep", role: "Frontend Developer" },
+  { name: "Rajdeep Das", github: "yourajdeep", role: "UI/UX & Optimization" },
 ];
 
 // Features - with sizes for bento grid
