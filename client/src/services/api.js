@@ -114,6 +114,7 @@ export const githubApi = {
 export const geminiApi = {
     chat: (message, context) => api.post('/gemini/chat', { message, context }),
     analyzeProject: (repoInfo) => api.post('/gemini/analyze-project', { repoInfo }),
+    getHistory: () => api.get('/gemini/history'),
 };
 
 export const authApi = {

@@ -38,10 +38,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: CircleAvatar(
                   radius: 20,
                   backgroundColor: AppColors.primary,
-                  backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                  backgroundImage: user?.avatarUrl != null
+                      ? NetworkImage(user!.avatarUrl!)
+                      : null,
                   child: user?.avatarUrl == null
                       ? Text(
-                          user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
+                          user?.name.isNotEmpty == true
+                              ? user!.name[0].toUpperCase()
+                              : '?',
                           style: const TextStyle(color: Colors.white),
                         )
                       : null,
@@ -54,13 +58,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ? 'GitHub: @${user!.githubUsername}'
                     : 'GitHub connected',
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.accentGreen.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text('Connected',
-                      style: TextStyle(color: AppColors.accentGreen, fontSize: 12)),
+                      style: TextStyle(
+                          color: AppColors.accentGreen, fontSize: 12)),
                 ),
               ),
             ],
@@ -84,7 +90,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       await NotificationService().unregister();
                     }
                   },
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                 ),
               ),
               _SettingsTile(
@@ -97,19 +103,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    : const Icon(Icons.chevron_right,
+                        color: AppColors.textMuted),
                 onTap: () async {
                   setState(() => _isSendingTest = true);
-                  final success = await NotificationService().sendTestNotification();
+                  final success =
+                      await NotificationService().sendTestNotification();
                   setState(() => _isSendingTest = false);
-                  
+
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(success
                             ? '✅ Test notification sent!'
                             : '❌ Failed to send notification'),
-                        backgroundColor: success ? AppColors.accentGreen : AppColors.error,
+                        backgroundColor:
+                            success ? AppColors.accentGreen : AppColors.error,
                       ),
                     );
                   }
@@ -122,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SettingsSection(
             title: 'Preferences',
             children: [
-              _SettingsTile(
+              const _SettingsTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Theme',
                 subtitle: 'Dark mode',
@@ -155,7 +164,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Clear Cache?'),
-                      content: const Text('This will remove cached data. Your account data will remain safe.'),
+                      content: const Text(
+                          'This will remove cached data. Your account data will remain safe.'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
@@ -222,7 +232,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
               );
-              
+
               if (confirmed == true) {
                 await NotificationService().unregister();
                 await ref.read(authStateProvider.notifier).logout();
@@ -242,7 +252,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 32),
           Text('Built with ❤️ by Alpha Coders',
-              style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center),
           const SizedBox(height: 100),
         ],
       ),
@@ -264,7 +275,10 @@ class _SettingsSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textMuted)),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: AppColors.textMuted)),
         ),
         Container(
           decoration: BoxDecoration(
@@ -313,7 +327,9 @@ class _SettingsTile extends StatelessWidget {
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: trailing ??
-          (onTap != null ? const Icon(Icons.chevron_right, color: AppColors.textMuted) : null),
+          (onTap != null
+              ? const Icon(Icons.chevron_right, color: AppColors.textMuted)
+              : null),
       onTap: onTap,
     );
   }

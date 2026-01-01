@@ -9,6 +9,7 @@ class Project {
   final double progress;
   final ProjectAnalysis? aiAnalysis;
   final ProjectStats stats;
+  final String status;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -22,6 +23,7 @@ class Project {
     this.progress = 0,
     this.aiAnalysis,
     this.stats = const ProjectStats(),
+    this.status = 'Planning',
     required this.createdAt,
     this.updatedAt,
   });
@@ -33,22 +35,21 @@ class Project {
       name: json['name'] ?? '',
       description: json['description'],
       githubUrl: json['githubUrl'],
-      languages: json['languages'] != null 
-          ? List<String>.from(json['languages']) 
-          : [],
+      languages:
+          json['languages'] != null ? List<String>.from(json['languages']) : [],
       progress: (json['progress'] ?? 0).toDouble(),
-      aiAnalysis: json['aiAnalysis'] != null 
-          ? ProjectAnalysis.fromJson(json['aiAnalysis']) 
+      aiAnalysis: json['aiAnalysis'] != null
+          ? ProjectAnalysis.fromJson(json['aiAnalysis'])
           : null,
-      stats: json['stats'] != null 
-          ? ProjectStats.fromJson(json['stats']) 
+      stats: json['stats'] != null
+          ? ProjectStats.fromJson(json['stats'])
           : const ProjectStats(),
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      status: json['status'] ?? 'Planning',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
-          : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
@@ -62,7 +63,7 @@ class Project {
       'languages': languages,
       'progress': progress,
       'aiAnalysis': aiAnalysis?.toJson(),
-      'stats': stats.toJson(),
+      'status': status,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -86,6 +87,7 @@ class Project {
     double? progress,
     ProjectAnalysis? aiAnalysis,
     ProjectStats? stats,
+    String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -99,6 +101,7 @@ class Project {
       progress: progress ?? this.progress,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
       stats: stats ?? this.stats,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -121,11 +124,10 @@ class ProjectAnalysis {
   factory ProjectAnalysis.fromJson(Map<String, dynamic> json) {
     return ProjectAnalysis(
       summary: json['summary'] ?? '',
-      strengths: json['strengths'] != null 
-          ? List<String>.from(json['strengths']) 
-          : [],
-      suggestions: json['suggestions'] != null 
-          ? List<String>.from(json['suggestions']) 
+      strengths:
+          json['strengths'] != null ? List<String>.from(json['strengths']) : [],
+      suggestions: json['suggestions'] != null
+          ? List<String>.from(json['suggestions'])
           : [],
       overallRating: json['overallRating'] ?? '',
     );

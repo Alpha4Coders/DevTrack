@@ -24,4 +24,7 @@ router.get('/health', geminiController.healthCheck);
 // Analyze project progress
 router.post('/analyze-project', requireAuth, geminiController.analyzeProject);
 
+// Get chat history
+router.get('/history', requireAuth, geminiController.getChatHistory);
+
 module.exports = router;

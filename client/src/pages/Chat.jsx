@@ -156,9 +156,7 @@ function TypingIndicator() {
     )
 }
 
-// Simple cache for AI responses
-const responseCache = new Map()
-const CACHE_EXPIRY = 5 * 60 * 1000
+// Rate limit constants
 const RATE_LIMIT_MS = 10000
 
 export default function Chat() {
@@ -168,26 +166,66 @@ export default function Chat() {
     const [projects, setProjects] = useState([])
     const [learningStats, setLearningStats] = useState({})
     const [cooldown, setCooldown] = useState(0)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
     const messagesEndRef = useRef(null)
     const lastRequestTime = useRef(0)
 
     useEffect(() => {
         fetchContext()
-        setMessages([{
-            role: 'assistant',
-            content: `👋 **Hi! I'm your DevTrack AI Assistant** powered by **Llama 3.3 70B** via Groq.
-
-I can help you with:
-- **Project guidance** - Which project to focus on and why
-- **Learning suggestions** - What to learn next based on your progress
-- **Code help** - Debug issues or explain concepts
-- **Motivation** - Keep you on track with your goals
-
-> 💡 **Tip**: I have access to your full project details including GitHub data and AI analysis!
-
-Just ask me anything!`
-        }])
+        fetchHistory()
     }, [])
+
+    const fetchHistory = async () => {
+        try {
+            setLoading(true)
+            const response = await geminiApi.getHistory()
+            if (response.data.success && response.data.data.history.length > 0) {
+                setMessages(response.data.data.history)
+            } else {
+                setMessages([{
+                    role: 'assistant',
+                    content: `👋 **Hi! I'm your Gemini 2.0 flash coding assistant.**\nI'm here to help you build better software faster.\n\nI can help you with:\n- **Code implementation**\n- **Debugging**\n- **Architecture**\n- **Best practices**\n\n> 💡 **Tip**: I specialize strictly in coding. Just share your code or ask any programming question!`
+                }])
+            }
+        } catch (err) {
+            console.error('Error fetching history:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const groupHistoryByDate = () => {
+        const groups = {
+            'Today': [],
+            'Yesterday': [],
+            'Previous 7 Days': [],
+            'Older': []
+        };
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+
+        messages.filter(m => m.role === 'user').forEach(msg => {
+            const msgDate = new Date(msg.timestamp?._seconds * 1000 || msg.timestamp || now);
+            const d = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
+
+            if (d.getTime() === today.getTime()) {
+                groups['Today'].push(msg);
+            } else if (d.getTime() === yesterday.getTime()) {
+                groups['Yesterday'].push(msg);
+            } else if (d.getTime() >= lastWeek.getTime()) {
+                groups['Previous 7 Days'].push(msg);
+            } else {
+                groups['Older'].push(msg);
+            }
+        });
+
+        return groups;
+    }
 
     useEffect(() => {
         scrollToBottom()
@@ -233,18 +271,6 @@ Just ask me anything!`
         return context
     }
 
-    const getCacheKey = (message) => message.toLowerCase().trim().substring(0, 100)
-
-    const getCachedResponse = (message) => {
-        const cached = responseCache.get(getCacheKey(message))
-        if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) return cached.response
-        return null
-    }
-
-    const cacheResponse = (message, response) => {
-        responseCache.set(getCacheKey(message), { response, timestamp: Date.now() })
-    }
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!input.trim() || loading || cooldown > 0) return
@@ -260,19 +286,12 @@ Just ask me anything!`
         setInput('')
         setMessages(prev => [...prev, { role: 'user', content: userMessage }])
 
-        const cachedResponse = getCachedResponse(userMessage)
-        if (cachedResponse) {
-            setMessages(prev => [...prev, { role: 'assistant', content: cachedResponse + '\n\n_📦 (Cached response)_' }])
-            return
-        }
-
         setLoading(true)
         lastRequestTime.current = now
 
         try {
             const response = await geminiApi.chat(userMessage, buildContext())
             const aiMessage = response.data.data.message
-            cacheResponse(userMessage, aiMessage)
             setMessages(prev => [...prev, { role: 'assistant', content: aiMessage }])
             setCooldown(10)
         } catch (err) {
@@ -295,21 +314,119 @@ Just ask me anything!`
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="h-[calc(100vh-25px)] flex flex-col"
+            className="h-[calc(100vh-25px)] flex gap-4 lg:gap-6 overflow-hidden relative"
         >
-            {/* Main Container */}
+            {/* Sidebar (History) */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div
+                        initial={{ x: -300, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -300, opacity: 0 }}
+                        className="fixed lg:relative z-40 lg:z-auto flex flex-col w-72 h-[calc(100vh-25px)] lg:h-full rounded-[2rem] border border-white/10 p-4"
+                        style={{
+                            background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
+                            backdropFilter: 'blur(20px)'
+                        }}
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <Button
+                                variant="outline"
+                                className="flex-1 justify-start gap-2 border-white/5 hover:bg-white/5 bg-white/5"
+                                onClick={() => {
+                                    setMessages([]);
+                                    fetchHistory();
+                                }}
+                            >
+                                <span className="text-lg">➕</span> New Chat
+                            </Button>
+                            <button
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="lg:hidden p-2 text-slate-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                            {Object.entries(groupHistoryByDate()).map(([label, msgs]) => msgs.length > 0 && (
+                                <div key={label}>
+                                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-2">{label}</h3>
+                                    <div className="space-y-1">
+                                        {msgs.slice(0, 5).reverse().map((msg, i) => (
+                                            <button
+                                                key={i}
+                                                className="w-full text-left px-3 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all truncate border border-transparent hover:border-white/5"
+                                                onClick={() => {
+                                                    setInput(msg.content);
+                                                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                                                }}
+                                            >
+                                                {msg.content}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            {messages.length === 0 && !loading && (
+                                <p className="text-xs text-slate-600 px-3 py-2 italic text-center">No recent history</p>
+                            )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-white/5">
+                            <div className="flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-sm shadow-lg shadow-purple-500/20">
+                                    👤
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-white truncate">Developer Settings</p>
+                                    <p className="text-[10px] text-slate-500 truncate uppercase tracking-tighter">AI Management</p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Main Chat Container */}
             <div
-                className="rounded-[2rem] p-6 lg:p-8 border border-white/10 flex-1 flex flex-col overflow-hidden"
+                className="rounded-[2rem] p-6 lg:p-8 border border-white/10 flex-1 flex flex-col overflow-hidden relative"
                 style={{
                     background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                 }}
             >
+                {/* Sidebar Toggle Button (Visible when sidebar is closed) */}
+                {!isSidebarOpen && (
+                    <motion.button
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all shadow-xl backdrop-blur-md"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </motion.button>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-1">AI Assistant</h1>
-                        <p className="text-slate-400 text-sm">Get personalized guidance for your development journey</p>
+                    <div className="flex items-center gap-3">
+                        {isSidebarOpen && (
+                            <button
+                                onClick={() => setIsSidebarOpen(false)}
+                                className="p-2 -ml-2 text-slate-500 hover:text-white transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                        )}
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-1">DevTrack AI</h1>
+                            <p className="text-slate-400 text-sm">Experimental Technical Assistant</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-3">
                         {/* Context badges */}

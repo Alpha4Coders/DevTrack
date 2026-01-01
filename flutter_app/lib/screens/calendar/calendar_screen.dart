@@ -58,7 +58,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 onPressed: () => _changeMonth(-1),
                               ),
                               Text(_getMonthYear(selectedDate),
-                                  style: Theme.of(context).textTheme.titleLarge),
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
                               IconButton(
                                 icon: const Icon(Icons.chevron_right),
                                 onPressed: () => _changeMonth(1),
@@ -68,11 +69,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                            children: [
+                              'Mon',
+                              'Tue',
+                              'Wed',
+                              'Thu',
+                              'Fri',
+                              'Sat',
+                              'Sun'
+                            ]
                                 .map((day) => SizedBox(
                                       width: 40,
                                       child: Text(day,
-                                          style: Theme.of(context).textTheme.bodySmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                           textAlign: TextAlign.center),
                                     ))
                                 .toList(),
@@ -125,7 +136,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildCalendarGrid(TaskState state) {
     final selectedDate = state.selectedDate;
     final firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
-    final lastDayOfMonth = DateTime(selectedDate.year, selectedDate.month + 1, 0);
+    final lastDayOfMonth =
+        DateTime(selectedDate.year, selectedDate.month + 1, 0);
     final startingWeekday = firstDayOfMonth.weekday;
 
     List<Widget> days = [];
@@ -141,15 +153,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
       days.add(
         GestureDetector(
-          onTap: () => ref.read(taskStateProvider.notifier).changeSelectedDate(date),
+          onTap: () =>
+              ref.read(taskStateProvider.notifier).changeSelectedDate(date),
           child: Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
               gradient: isSelected ? AppColors.primaryGradient : null,
-              color: isToday && !isSelected ? AppColors.primary.withOpacity(0.1) : null,
+              color: isToday && !isSelected
+                  ? AppColors.primary.withOpacity(0.1)
+                  : null,
               borderRadius: BorderRadius.circular(10),
-              border: isToday && !isSelected ? Border.all(color: AppColors.primary) : null,
+              border: isToday && !isSelected
+                  ? Border.all(color: AppColors.primary)
+                  : null,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -161,7 +178,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               : isToday
                                   ? AppColors.primary
                                   : AppColors.textPrimary,
-                          fontWeight: isToday || isSelected ? FontWeight.bold : null,
+                          fontWeight:
+                              isToday || isSelected ? FontWeight.bold : null,
                         )),
                 if (taskCount > 0)
                   Positioned(
@@ -170,7 +188,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       width: 4,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white : AppColors.accentGreen,
+                        color:
+                            isSelected ? Colors.white : AppColors.accentGreen,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -199,22 +218,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           leading: Checkbox(
             value: task.isCompleted,
             onChanged: (value) {
-              ref.read(taskStateProvider.notifier).toggleTaskCompletion(task.id);
+              ref
+                  .read(taskStateProvider.notifier)
+                  .toggleTaskCompletion(task.id);
             },
             activeColor: AppColors.accentGreen,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
           title: Text(task.title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    decoration:
+                        task.isCompleted ? TextDecoration.lineThrough : null,
                     color: task.isCompleted ? AppColors.textMuted : null,
                   )),
           subtitle: Row(
             children: [
               if (task.dueTime != null) ...[
-                const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                const Icon(Icons.access_time,
+                    size: 14, color: AppColors.textMuted),
                 const SizedBox(width: 4),
-                Text(task.dueTime!, style: Theme.of(context).textTheme.bodySmall),
+                Text(task.dueTime!,
+                    style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(width: 12),
               ],
               _PriorityBadge(priority: task.priority),
@@ -260,7 +285,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Add New Task', style: Theme.of(context).textTheme.titleLarge),
+              Text('Add New Task',
+                  style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 20),
               TextField(
                 controller: titleController,
@@ -272,9 +298,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               const SizedBox(height: 16),
               DropdownButtonFormField<TaskPriority>(
                 decoration: const InputDecoration(labelText: 'Priority'),
-                value: selectedPriority,
+                initialValue: selectedPriority,
                 items: TaskPriority.values
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p.displayName)))
+                    .map((p) =>
+                        DropdownMenuItem(value: p, child: Text(p.displayName)))
                     .toList(),
                 onChanged: (v) => setModalState(() => selectedPriority = v!),
               ),
@@ -313,8 +340,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   String _getMonthYear(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return '${months[date.month - 1]} ${date.year}';
   }
@@ -325,7 +362,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -340,11 +379,13 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          const Icon(Icons.check_circle_outline, size: 48, color: AppColors.textMuted),
+          const Icon(Icons.check_circle_outline,
+              size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
-          Text('No tasks for this day', style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.textMuted,
-          )),
+          Text('No tasks for this day',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textMuted,
+                  )),
         ],
       ),
     );
@@ -377,7 +418,10 @@ class _PriorityBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(priority.displayName,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color, fontSize: 10)),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: color, fontSize: 10)),
     );
   }
 }
