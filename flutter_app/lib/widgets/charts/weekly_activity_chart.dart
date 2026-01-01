@@ -56,8 +56,10 @@ class WeeklyActivityChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         gridData: FlGridData(
@@ -65,7 +67,7 @@ class WeeklyActivityChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 1,
           getDrawingHorizontalLine: (value) {
-            return FlLine(
+            return const FlLine(
               color: AppColors.border,
               strokeWidth: 0.5,
             );
@@ -79,7 +81,7 @@ class WeeklyActivityChart extends StatelessWidget {
   List<BarChartGroupData> _createBarGroups() {
     // Sample data - would be replaced with actual data
     final data = [3.0, 2.5, 4.0, 3.5, 2.0, 1.0, 2.5];
-    
+
     return data.asMap().entries.map((entry) {
       return BarChartGroupData(
         x: entry.key,

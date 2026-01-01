@@ -53,7 +53,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.code, color: Colors.white, size: 24),
+                      child:
+                          const Icon(Icons.code, color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 12),
                     const Text('DevTrack'),
@@ -122,25 +123,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             iconColor: AppColors.accentOrange,
                             value: '${stats?.currentStreak ?? 0}',
                             label: 'Day Streak',
-                          ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+                          )
+                              .animate()
+                              .fadeIn(delay: 200.ms)
+                              .scale(begin: const Offset(0.9, 0.9)),
                           _StatCard(
                             icon: Icons.access_time,
                             iconColor: AppColors.accentGreen,
-                            value: '${stats?.totalHours.toStringAsFixed(1) ?? '0'}h',
+                            value:
+                                '${stats?.totalHours.toStringAsFixed(1) ?? '0'}h',
                             label: 'Total Hours',
-                          ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.9, 0.9)),
+                          )
+                              .animate()
+                              .fadeIn(delay: 300.ms)
+                              .scale(begin: const Offset(0.9, 0.9)),
                           _StatCard(
                             icon: Icons.edit_note,
                             iconColor: AppColors.primary,
                             value: '${stats?.totalEntries ?? 0}',
                             label: 'Entries',
-                          ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.9, 0.9)),
+                          )
+                              .animate()
+                              .fadeIn(delay: 400.ms)
+                              .scale(begin: const Offset(0.9, 0.9)),
                           _StatCard(
                             icon: Icons.trending_up,
                             iconColor: AppColors.accent,
                             value: '${stats?.longestStreak ?? 0}',
                             label: 'Best Streak',
-                          ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.9, 0.9)),
+                          )
+                              .animate()
+                              .fadeIn(delay: 500.ms)
+                              .scale(begin: const Offset(0.9, 0.9)),
                         ],
                       ),
 
@@ -200,7 +214,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.edit_note, size: 48, color: AppColors.textMuted),
+                            const Icon(Icons.edit_note,
+                                size: 48, color: AppColors.textMuted),
                             const SizedBox(height: 12),
                             Text(
                               'No entries yet',
@@ -225,15 +240,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                             child: Row(
                               children: [
-                                Text(entry.mood, style: const TextStyle(fontSize: 24)),
+                                Text(entry.mood,
+                                    style: const TextStyle(fontSize: 24)),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         entry.description,
-                                        style: Theme.of(context).textTheme.bodyMedium,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -241,32 +260,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       if (entry.tags.isNotEmpty)
                                         Wrap(
                                           spacing: 4,
-                                          children: entry.tags.take(3).map((tag) => Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 8, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primary.withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  tag,
-                                                  style: const TextStyle(
-                                                      fontSize: 10, color: AppColors.primary),
-                                                ),
-                                              )).toList(),
+                                          children: entry.tags
+                                              .take(3)
+                                              .map((tag) => Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.primary
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
+                                                    ),
+                                                    child: Text(
+                                                      tag,
+                                                      style: const TextStyle(
+                                                          fontSize: 10,
+                                                          color: AppColors
+                                                              .primary),
+                                                    ),
+                                                  ))
+                                              .toList(),
                                         ),
                                     ],
                                   ),
                                 ),
                                 Text(
                                   '${entry.durationHours.toStringAsFixed(1)}h',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
                                         color: AppColors.accentGreen,
                                       ),
                                 ),
                               ],
                             ),
-                          )).toList(),
+                          )),
 
                     const SizedBox(height: 100),
                   ]),
@@ -341,15 +373,19 @@ class _WeeklyChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final maxHours = data.isNotEmpty
-        ? data.map((d) => (d.hours as num?) ?? 0).reduce((a, b) => a > b ? a : b)
+        ? data
+            .map((d) => (d.hours as num?) ?? 0)
+            .reduce((a, b) => a > b ? a : b)
         : 5;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(7, (index) {
-        final hours = index < data.length ? ((data[index].hours as num?) ?? 0) : 0;
-        final height = maxHours > 0 ? (hours / maxHours * 100).clamp(10, 100) : 10;
+        final hours =
+            index < data.length ? ((data[index].hours as num?) ?? 0) : 0;
+        final height =
+            maxHours > 0 ? (hours / maxHours * 100).clamp(10, 100) : 10;
 
         return Column(
           mainAxisAlignment: MainAxisAlignment.end,

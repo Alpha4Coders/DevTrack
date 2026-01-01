@@ -64,35 +64,44 @@ class _SplashScreenState extends State<SplashScreen> {
                   .animate()
                   .fadeIn(duration: 600.ms)
                   .scale(begin: const Offset(0.8, 0.8)),
-              
+
               const SizedBox(height: 24),
-              
-              // App Name
-              Text(
-                'DevTrack',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
+
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  Text(
+                    'Dev',
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                  ),
+                  Text(
+                    'Track',
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                  ),
+                ],
               )
                   .animate(delay: 300.ms)
                   .fadeIn(duration: 600.ms)
                   .slideY(begin: 0.3),
-              
+
               const SizedBox(height: 8),
-              
+
               // Tagline
               Text(
                 'Track your developer journey',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              )
-                  .animate(delay: 500.ms)
-                  .fadeIn(duration: 600.ms),
-              
+                      color: AppColors.textSecondary,
+                    ),
+              ).animate(delay: 500.ms).fadeIn(duration: 600.ms),
+
               const SizedBox(height: 48),
-              
+
               // Loading indicator
               SizedBox(
                 width: 24,
@@ -101,9 +110,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   strokeWidth: 2,
                   color: AppColors.primary.withOpacity(0.7),
                 ),
-              )
-                  .animate(delay: 700.ms)
-                  .fadeIn(duration: 400.ms),
+              ).animate(delay: 700.ms).fadeIn(duration: 400.ms),
             ],
           ),
         ),

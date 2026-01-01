@@ -5,6 +5,7 @@
 
 const { getGroqService } = require('../services/groqService');
 const { APIError } = require('../middleware/errorHandler');
+const { collections } = require('../config/firebase');
 
 /**
  * Chat with AI
@@ -13,6 +14,7 @@ const { APIError } = require('../middleware/errorHandler');
 const chat = async (req, res, next) => {
     try {
         const { message, context } = req.body;
+        const userId = req.user?.uid;
 
         console.log('Chat request received:', { message: message?.substring(0, 50), hasContext: !!context });
 
@@ -21,16 +23,61 @@ const chat = async (req, res, next) => {
         }
 
         const groqService = getGroqService();
-        const response = await groqService.chat(message, context);
+
+        // Fetch recent history for context (last 5 rounds of conversation)
+        let history = [];
+        if (userId) {
+            try {
+                const historySnapshot = await collections.users()
+                    .doc(userId)
+                    .collection('chatHistory')
+                    .orderBy('timestamp', 'desc')
+                    .limit(10)
+                    .get();
+
+                history = historySnapshot.docs
+                    .map(doc => doc.data())
+                    .reverse(); // Chronological order
+            } catch (historyFetchError) {
+                console.error('Failed to fetch history for context:', historyFetchError);
+            }
+        }
+
+        const response = await groqService.chat(message, context, history);
 
         console.log('AI response:', { success: response.success, hasMessage: !!response.message });
+
+        const aiMessage = response.success ? response.message : (response.error || 'AI request failed. Please try again.');
+
+        // Save history if user is authenticated
+        if (userId && response.success) {
+            try {
+                const historyRef = collections.users().doc(userId).collection('chatHistory');
+
+                // Save user message
+                await historyRef.add({
+                    role: 'user',
+                    content: message,
+                    timestamp: new Date(),
+                });
+
+                // Save AI message
+                await historyRef.add({
+                    role: 'assistant',
+                    content: aiMessage,
+                    timestamp: new Date(),
+                });
+            } catch (historyError) {
+                console.error('Failed to save chat history:', historyError);
+            }
+        }
 
         // Return the AI message or error message
         res.status(200).json({
             success: response.success,
             data: {
-                message: response.success ? response.message : (response.error || 'AI request failed. Please try again.'),
-                model: response.model || 'llama-3.3-70b-versatile',
+                message: aiMessage,
+                model: 'DevTrack AI',
             },
         });
     } catch (error) {
@@ -144,10 +191,42 @@ const analyzeProject = async (req, res, next) => {
     }
 };
 
+/**
+ * Get chat history for user
+ * GET /api/gemini/history
+ */
+const getChatHistory = async (req, res, next) => {
+    try {
+        const userId = req.user.uid;
+
+        const historySnapshot = await collections.users()
+            .doc(userId)
+            .collection('chatHistory')
+            .orderBy('timestamp', 'asc')
+            .limit(50)
+            .get();
+
+        const history = historySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                history
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     chat,
     getMotivation,
     reviewCode,
     healthCheck,
     analyzeProject,
+    getChatHistory,
 };

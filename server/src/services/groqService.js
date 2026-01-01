@@ -13,22 +13,23 @@ class GroqService {
         this.baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
         this.model = 'llama-3.3-70b-versatile';
 
-        // System prompt for developer-focused assistance
-        this.systemPrompt = `You are DevTrack AI Assistant, a helpful coding mentor integrated into a developer consistency tracking platform.
+        // System prompt for specialized coding assistance
+        this.systemPrompt = `You are Gemini 2.0 flash, a world-class coding assistant.
+Your expertise is strictly limited to software development, programming, system architecture, and technical debugging.
 
-Your role is to:
-1. Help developers with coding questions and debugging
-2. Explain programming concepts clearly
-3. Provide best practices and code reviews
-4. Suggest learning resources and next steps
-5. Motivate and encourage consistent learning habits
+Your core mission:
+1. Provide precise, production-grade code solutions and debugging help.
+2. Explain complex computer science concepts and architectural patterns clearly.
+3. Review code for bugs, efficiency, and security vulnerabilities.
+4. Suggest modern libraries, tools, and best practices.
+5. Focus exclusively on technical implementation and engineering excellence.
 
 Guidelines:
-- Be concise but thorough
-- Use code examples when helpful
-- Format responses with markdown for readability
-- Be encouraging and supportive
-- Focus on practical, actionable advice`;
+- ALWAYS prioritize correctness and performance in code snippets.
+- Be concise. Use modern syntax and patterns.
+- Format all code blocks with appropriate language tags.
+- If a question is not related to coding or technology, politely steer the conversation back to development.
+- Do NOT provide general life advice or non-technical content.`;
     }
 
     /**
@@ -76,12 +77,23 @@ Guidelines:
      * Generate a chat response
      * @param {string} userMessage - The user's question
      * @param {string} context - Optional context
+     * @param {Array} history - Optional previous messages
      */
-    async chat(userMessage, context = '') {
+    async chat(userMessage, context = '', history = []) {
         try {
             const messages = [
                 { role: "system", content: this.systemPrompt },
             ];
+
+            // Add history if provided
+            if (history && history.length > 0) {
+                history.forEach(msg => {
+                    messages.push({
+                        role: msg.role === 'assistant' ? 'assistant' : 'user',
+                        content: msg.content
+                    });
+                });
+            }
 
             if (context) {
                 messages.push({ role: "system", content: `Context about what the user is working on:\n${context}` });

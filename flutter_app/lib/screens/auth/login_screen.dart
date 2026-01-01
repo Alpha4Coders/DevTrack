@@ -92,12 +92,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ).animate().scale(delay: 200.ms),
                     const SizedBox(height: 24),
-                    Text(
-                      'DevTrack',
-                      style:
-                          Theme.of(context).textTheme.displayMedium?.copyWith(
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Text(
+                          'Dev',
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
+                        ),
+                        Text(
+                          'Track',
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
                     ).animate().fadeIn(delay: 400.ms),
                     const SizedBox(height: 8),
                     Text(
@@ -113,17 +129,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Features
                 Column(
                   children: [
-                    _FeatureItem(
+                    const _FeatureItem(
                       icon: Icons.trending_up,
                       text: 'Track learning progress',
                     ).animate().fadeIn(delay: 800.ms).slideX(begin: -0.2),
                     const SizedBox(height: 12),
-                    _FeatureItem(
+                    const _FeatureItem(
                       icon: Icons.code,
                       text: 'Manage projects with AI',
                     ).animate().fadeIn(delay: 900.ms).slideX(begin: -0.2),
                     const SizedBox(height: 12),
-                    _FeatureItem(
+                    const _FeatureItem(
                       icon: Icons.local_fire_department,
                       text: 'Build consistency streaks',
                     ).animate().fadeIn(delay: 1000.ms).slideX(begin: -0.2),

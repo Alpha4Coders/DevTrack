@@ -1,5 +1,6 @@
 /// API Configuration for DevTrack Flutter App
 /// Contains base URLs, endpoints, and OAuth configuration
+library;
 
 class ApiConfig {
   // Base URLs
@@ -55,6 +56,7 @@ class ApiEndpoints {
   // AI/Chat
   static const String groqChat = '/groq/chat';
   static const String geminiChat = '/gemini/chat';
+  static const String geminiHistory = '/gemini/history';
   static const String analyzeProject = '/gemini/analyze';
 
   // Notifications
