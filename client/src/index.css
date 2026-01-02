@@ -39,9 +39,6 @@
 }
 
 /* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
 
 /* Perspective utility for 3D effects */
 .perspective-1000 {
@@ -68,12 +65,12 @@ html {
 
 /* Hide scrollbar for horizontal scroll */
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 /* Selection styling */

@@ -5,7 +5,7 @@
 const app = require('./src/app');
 const { initializeFirebase } = require('./src/config/firebase');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 9000;
 
 // Initialize Firebase before starting server
 const startServer = async () => {
