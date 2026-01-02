@@ -76,12 +76,12 @@ function MessageBubble({ message, idx }) {
         >
             <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? 'flex-row-reverse' : ''}`}>
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm
+                <div className={`flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center
                     ${isUser
-                        ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20'
-                        : 'bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg shadow-cyan-500/20'}`}
+                        ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20 text-sm'
+                        : 'bg-white shadow-lg shadow-cyan-500/20'}`}
                 >
-                    {isUser ? '👤' : '🤖'}
+                    {isUser ? '👤' : <img src="/DevTrack.png" alt="AI" className="w-full h-full object-cover" />}
                 </div>
 
                 {/* Message Content */}
@@ -129,8 +129,8 @@ function TypingIndicator() {
             className="flex justify-start"
         >
             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
-                    🤖
+                <div className="w-8 h-8 rounded-xl bg-white shadow-lg shadow-cyan-500/20 overflow-hidden flex items-center justify-center">
+                    <img src="/DevTrack.png" alt="AI" className="w-full h-full object-cover" />
                 </div>
                 <div
                     className="rounded-2xl px-5 py-4 border border-white/10"
@@ -172,7 +172,7 @@ export default function Chat() {
     const [projects, setProjects] = useState([])
     const [learningStats, setLearningStats] = useState({})
     const [cooldown, setCooldown] = useState(0)
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Sidebar removed, kept state as false to avoid layout issues if used elsewhere temporarily
     const messagesEndRef = useRef(null)
     const lastRequestTime = useRef(0)
 
@@ -346,9 +346,9 @@ export default function Chat() {
             transition={{ duration: 0.5 }}
             className="h-[calc(100vh-6rem)] flex gap-4 lg:gap-6 overflow-hidden relative"
         >
-            {/* Loader Overlay */}
+            {/* Loader Overlay (Only for initial load, not for AI response) */}
             <AnimatePresence>
-                {loading && (
+                {loading && messages.length === 0 && (
                     <motion.div
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -359,77 +359,7 @@ export default function Chat() {
                 )}
             </AnimatePresence>
 
-            {/* Sidebar (History) */}
-            <AnimatePresence>
-                {isSidebarOpen && (
-                    <motion.div
-                        initial={{ x: -300, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -300, opacity: 0 }}
-                        className="fixed lg:relative z-40 lg:z-auto flex flex-col w-72 h-[calc(100vh-25px)] lg:h-full rounded-[2rem] border border-white/10 p-4"
-                        style={{
-                            background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
-                            backdropFilter: 'blur(20px)'
-                        }}
-                    >
-                        <div className="flex justify-between items-center mb-6">
-                            <Button
-                                variant="outline"
-                                className="flex-1 justify-start gap-2 border-white/5 hover:bg-white/5 bg-white/5"
-                                onClick={() => {
-                                    setMessages([]);
-                                    fetchHistory();
-                                }}
-                            >
-                                <span className="text-lg">➕</span> New Chat
-                            </Button>
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="lg:hidden p-2 text-slate-400 hover:text-white"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                            {Object.entries(groupHistoryByDate()).map(([label, msgs]) => msgs.length > 0 && (
-                                <div key={label}>
-                                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-2">{label}</h3>
-                                    <div className="space-y-1">
-                                        {msgs.slice(0, 5).reverse().map((msg, i) => (
-                                            <button
-                                                key={i}
-                                                className="w-full text-left px-3 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all truncate border border-transparent hover:border-white/5"
-                                                onClick={() => {
-                                                    setInput(msg.content);
-                                                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                                                }}
-                                            >
-                                                {msg.content}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                            {!historyLoaded && messages.length === 0 && !loading && (
-                                <p className="text-xs text-slate-600 px-3 py-2 italic text-center">No recent history</p>
-                            )}
-                        </div>
-
-                        <div className="mt-4 pt-4 border-t border-white/5">
-                            <div className="flex items-center gap-3 px-3 py-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-sm shadow-lg shadow-purple-500/20">
-                                    👤
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white truncate">Developer Settings</p>
-                                    <p className="text-[10px] text-slate-500 truncate uppercase tracking-tighter">AI Management</p>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Sidebar Removed */}
 
             {/* Main Chat Container */}
             <div
@@ -439,48 +369,29 @@ export default function Chat() {
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                 }}
             >
-                {/* Sidebar Toggle Button (Visible when sidebar is closed) */}
-                {!isSidebarOpen && (
-                    <motion.button
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all shadow-xl backdrop-blur-md"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                    </motion.button>
-                )}
-
+                {/* Header toggle removed */}
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        {isSidebarOpen && (
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="p-2 -ml-2 text-slate-500 hover:text-white transition-colors"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                        )}
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-1">DevTrack AI</h1>
                             <p className="text-slate-400 text-sm">Experimental Technical Assistant</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* Context badges */}
-                        <div className="flex items-center gap-2 text-xs">
-                            <span className="px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                {projects.length} projects
-                            </span>
-                            <span className="px-3 py-1.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                                🔥 {learningStats.currentStreak || 0} day streak
-                            </span>
-                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-white/5 hover:bg-white/10 bg-white/5 rounded-full px-4"
+                            onClick={() => {
+                                setMessages([{
+                                    role: 'assistant',
+                                    content: `👋 **Hi! I'm your Gemini 2.0 flash coding assistant.**\nI'm here to help you build better software faster.\n\nI can help you with:\n- **Code implementation**\n- **Debugging**\n- **Architecture**\n- **Best practices**\n\n> 💡 **Tip**: I specialize strictly in coding. Just share your code or ask any programming question!`
+                                }]);
+                            }}
+                        >
+                            <span>➕</span> New Chat
+                        </Button>
                     </div>
                 </div>
 
@@ -498,7 +409,7 @@ export default function Chat() {
 
                 {/* Messages Area */}
                 <div
-                    className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2"
+                    className="flex-1 overflow-y-auto min-h-0 mb-4 space-y-4 pr-2"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
                 >
                     <AnimatePresence>
@@ -522,11 +433,7 @@ export default function Chat() {
                             className="w-full bg-white/5 border border-white/10 rounded-full px-6 py-4 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-colors"
                             disabled={loading || cooldown > 0}
                         />
-                        {cooldown > 0 && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                <span className="text-orange-400 text-sm font-medium">⏳ {cooldown}s</span>
-                            </div>
-                        )}
+                        {/* Visual timer removed */}
                     </div>
                     <Button
                         type="submit"
