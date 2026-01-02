@@ -4,6 +4,7 @@ import { useCache } from '../context/CacheContext'
 import Button from '../components/ui/Button'
 import { geminiApi, projectsApi, logsApi } from '../services/api'
 import { useState, useEffect, useRef } from 'react'
+import Lenis from 'lenis'
 import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -174,11 +175,43 @@ export default function Chat() {
     const [cooldown, setCooldown] = useState(0)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Sidebar removed, kept state as false to avoid layout issues if used elsewhere temporarily
     const messagesEndRef = useRef(null)
+    const containerRef = useRef(null)
+    const lenisRef = useRef(null)
     const lastRequestTime = useRef(0)
 
     useEffect(() => {
         fetchContext()
         fetchHistory()
+    }, [])
+
+    useEffect(() => {
+        if (!containerRef.current) return
+
+        const lenis = new Lenis({
+            wrapper: containerRef.current,
+            content: containerRef.current.firstElementChild,
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 2,
+        })
+
+        lenisRef.current = lenis
+
+        function raf(time) {
+            lenis.raf(time)
+            requestAnimationFrame(raf)
+        }
+
+        const rafId = requestAnimationFrame(raf)
+
+        return () => {
+            cancelAnimationFrame(rafId)
+            lenis.destroy()
+        }
     }, [])
 
     const fetchHistory = async () => {
@@ -258,7 +291,11 @@ export default function Chat() {
     }
 
     useEffect(() => {
-        scrollToBottom()
+        // Small delay to ensure content is rendered before scrolling
+        const timer = setTimeout(() => {
+            scrollToBottom()
+        }, 100)
+        return () => clearTimeout(timer)
     }, [messages])
 
     useEffect(() => {
@@ -269,7 +306,11 @@ export default function Chat() {
     }, [cooldown])
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (lenisRef.current && messagesEndRef.current) {
+            lenisRef.current.scrollTo(messagesEndRef.current, { immediate: false })
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
     }
 
     const fetchContext = async () => {
@@ -409,6 +450,7 @@ export default function Chat() {
 
                 {/* Messages Area */}
                 <div
+                    ref={containerRef}
                     className="flex-1 overflow-y-auto min-h-0 mb-4 space-y-4 pr-2 overscroll-behavior-contain relative z-0 pointer-events-auto"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
                 >
