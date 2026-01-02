@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { tasksApi } from '../../services/api'
+import { Calendar as CalendarIcon } from 'lucide-react'
 
 // Calendar Component with Task Management
 export default function Calendar() {
@@ -245,7 +246,7 @@ export default function Calendar() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                        📅 Calendar
+                        <CalendarIcon className="w-5 h-5 text-purple-400" /> Calendar
                     </h3>
                     <div className="flex items-center gap-1">
                         <button
