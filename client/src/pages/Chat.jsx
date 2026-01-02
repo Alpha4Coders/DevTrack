@@ -160,8 +160,7 @@ function TypingIndicator() {
     )
 }
 
-// Rate limit constants
-const RATE_LIMIT_MS = 10000
+// Rate limit constants removed
 
 export default function Chat() {
     const [messages, setMessages] = useState([])
@@ -172,12 +171,10 @@ export default function Chat() {
     const [loading, setLoading] = useState(!hasCachedData('chat-history'))
     const [projects, setProjects] = useState([])
     const [learningStats, setLearningStats] = useState({})
-    const [cooldown, setCooldown] = useState(0)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Sidebar removed, kept state as false to avoid layout issues if used elsewhere temporarily
     const messagesEndRef = useRef(null)
     const containerRef = useRef(null)
     const lenisRef = useRef(null)
-    const lastRequestTime = useRef(0)
 
     useEffect(() => {
         fetchContext()
@@ -298,13 +295,6 @@ export default function Chat() {
         return () => clearTimeout(timer)
     }, [messages])
 
-    useEffect(() => {
-        if (cooldown > 0) {
-            const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [cooldown])
-
     const scrollToBottom = () => {
         if (lenisRef.current && messagesEndRef.current) {
             lenisRef.current.scrollTo(messagesEndRef.current, { immediate: false })
@@ -344,27 +334,18 @@ export default function Chat() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (!input.trim() || loading || cooldown > 0) return
-
-        const now = Date.now()
-        const timeSinceLastRequest = now - lastRequestTime.current
-        if (timeSinceLastRequest < RATE_LIMIT_MS) {
-            setCooldown(Math.ceil((RATE_LIMIT_MS - timeSinceLastRequest) / 1000))
-            return
-        }
+        if (!input.trim() || loading) return
 
         const userMessage = input.trim()
         setInput('')
         setMessages(prev => [...prev, { role: 'user', content: userMessage }])
 
         setLoading(true)
-        lastRequestTime.current = now
 
         try {
             const response = await geminiApi.chat(userMessage, buildContext())
             const aiMessage = response.data.data.message
             setMessages(prev => [...prev, { role: 'assistant', content: aiMessage }])
-            setCooldown(10)
         } catch (err) {
             console.error('Chat error:', err)
             setMessages(prev => [...prev, { role: 'assistant', content: '❌ Sorry, I encountered an error. Please try again.' }])
@@ -443,7 +424,7 @@ export default function Chat() {
                             key={idx}
                             label={qp.label}
                             onClick={() => setInput(qp.prompt)}
-                            disabled={cooldown > 0 || loading}
+                            disabled={loading}
                         />
                     ))}
                 </div>
@@ -471,15 +452,15 @@ export default function Chat() {
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder={cooldown > 0 ? `Please wait ${cooldown}s...` : "Ask me anything about your projects, learning, or coding..."}
+                            placeholder="Ask me anything about your projects, learning, or coding..."
                             className="w-full bg-white/5 border border-white/10 rounded-full px-6 py-4 text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none transition-colors"
-                            disabled={loading || cooldown > 0}
+                            disabled={loading}
                         />
                         {/* Visual timer removed */}
                     </div>
                     <Button
                         type="submit"
-                        disabled={loading || !input.trim() || cooldown > 0}
+                        disabled={loading || !input.trim()}
                         className="px-6 rounded-full"
                     >
                         {loading ? (
