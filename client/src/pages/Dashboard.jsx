@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@clerk/clerk-react'
+import { Brain, Github, GitCommitHorizontal, Lightbulb } from 'lucide-react'
 
 // Helper to format dates for display
 const formatDate = (date) => {
@@ -555,7 +556,7 @@ export default function Dashboard() {
         >
             {/* Main Container with rounded border */}
             <div
-                className="rounded-[2rem] p-4 lg:p-5 border border-white/10 min-h-[calc(100vh-120px)] flex flex-col"
+                className="rounded-[2rem] p-4 lg:p-8 border border-white/10 flex flex-col"
                 style={{
                     background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
@@ -627,9 +628,9 @@ export default function Dashboard() {
 
                 {/* Main Dashboard Grid */}
                 {!hasNoData && (
-                    <div className="space-y-4 lg:space-y-3">
+                    <div className="space-y-4 lg:space-y-5">
                         {/* Row 1: Portfolio + Assets */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-3">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
                             {/* Portfolio Card - spans 4 cols */}
                             <div className="lg:col-span-4">
                                 <PortfolioCard
@@ -646,7 +647,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <AssetCard
-                                        icon="📚"
+                                        icon={<Brain size={20} />}
                                         title="Learning"
                                         subtitle="Streak days"
                                         value={logStats?.currentStreak || 0}
@@ -655,7 +656,7 @@ export default function Dashboard() {
                                         delay={0.15}
                                     />
                                     <AssetCard
-                                        icon="🐙"
+                                        icon={<Github size={20} />}
                                         title="GitHub"
                                         subtitle="Commit streak"
                                         value={githubStreak}
@@ -664,7 +665,7 @@ export default function Dashboard() {
                                         delay={0.2}
                                     />
                                     <AssetCard
-                                        icon="📊"
+                                        icon={<GitCommitHorizontal size={20} />}
                                         title="Commits"
                                         subtitle={`${projectStats?.totalProjects || 0} projects`}
                                         value={projectStats?.totalCommits || 0}
@@ -673,7 +674,7 @@ export default function Dashboard() {
                                         delay={0.25}
                                     />
                                     <AssetCard
-                                        icon="🏷️"
+                                        icon={<Lightbulb size={20} />}
                                         title="Skills"
                                         subtitle={uniqueTags.slice(0, 2).join(', ') || 'Add tags'}
                                         value={uniqueTags.length}
@@ -685,7 +686,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Row 2: Activity Table + Calendar */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-3">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
                             {/* Activity Table - spans 7 cols */}
                             <div className="lg:col-span-7">
                                 <ActivityTable logs={recentLogs} logStats={logStats} githubCommits={githubCommits} />
@@ -699,7 +700,7 @@ export default function Dashboard() {
 
                         {/* Row 3: Mobile App Token (Mobile Only) */}
                         <div className="block lg:hidden">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-3 mt-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 mt-4">
                                 <div className="lg:col-span-4">
                                     <MobileAppToken />
                                 </div>
