@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Lenis from 'lenis';
 import { motion, AnimatePresence } from 'framer-motion';
 import { preferencesApi, notificationsApi } from '../../services/api';
 import useNotifications from '../../hooks/useNotifications';
@@ -31,6 +32,35 @@ const NotificationSettings = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const contentRef = useRef(null);
+
+    // Initialize Lenis for smooth scrolling
+    useEffect(() => {
+        if (!isOpen || !contentRef.current || loading) return;
+
+        const lenis = new Lenis({
+            wrapper: contentRef.current,
+            content: contentRef.current.firstElementChild, // Target the inner content div
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smooth: true,
+            smoothTouch: false,
+            touchMultiplier: 2,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+
+        requestAnimationFrame(raf);
+
+        return () => {
+            lenis.destroy();
+        };
+    }, [isOpen, loading]);
 
     // Load current preferences
     useEffect(() => {
@@ -108,7 +138,7 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-slate-800">
+                    <div className="flex items-center justify-between p-5 border-b border-slate-800">
                         <h2 className="text-xl font-bold text-white">Settings</h2>
                         <button
                             onClick={onClose}
@@ -121,7 +151,7 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                    <div ref={contentRef} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
                                 <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full"></div>
@@ -329,7 +359,7 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Footer */}
-                    <div className="flex justify-end gap-4 p-6 border-t border-slate-800">
+                    <div className="flex justify-end gap-4 p-3 border-t border-slate-800">
                         <button
                             onClick={onClose}
                             className="px-6 py-2 text-slate-400 hover:text-white transition-colors"
