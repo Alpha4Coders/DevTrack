@@ -79,7 +79,7 @@ function MessageBubble({ message, idx }) {
                 <div className={`flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center
                     ${isUser
                         ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20 text-sm'
-                        : 'bg-white shadow-lg shadow-cyan-500/20'}`}
+                        : 'bg-white/10 border border-white/10'}`}
                 >
                     {isUser ? '👤' : <img src="/DevTrack.png" alt="AI" className="w-full h-full object-cover" />}
                 </div>
@@ -129,7 +129,7 @@ function TypingIndicator() {
             className="flex justify-start"
         >
             <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-white shadow-lg shadow-cyan-500/20 overflow-hidden flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/10 overflow-hidden flex items-center justify-center">
                     <img src="/DevTrack.png" alt="AI" className="w-full h-full object-cover" />
                 </div>
                 <div
@@ -409,7 +409,7 @@ export default function Chat() {
 
                 {/* Messages Area */}
                 <div
-                    className="flex-1 overflow-y-auto min-h-0 mb-4 space-y-4 pr-2"
+                    className="flex-1 overflow-y-auto min-h-0 mb-4 space-y-4 pr-2 overscroll-behavior-contain relative z-0 pointer-events-auto"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
                 >
                     <AnimatePresence>
