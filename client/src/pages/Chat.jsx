@@ -178,7 +178,9 @@ export default function Chat() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Sidebar removed, kept state as false to avoid layout issues if used elsewhere temporarily
     const messagesEndRef = useRef(null)
     const containerRef = useRef(null)
+    const contentRef = useRef(null)
     const lenisRef = useRef(null)
+    const [showScrollBottom, setShowScrollBottom] = useState(false)
 
     useEffect(() => {
         fetchContext()
@@ -190,7 +192,7 @@ export default function Chat() {
 
         const lenis = new Lenis({
             wrapper: containerRef.current,
-            content: containerRef.current.firstElementChild,
+            content: contentRef.current,
             duration: 1.2,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: 'vertical',
@@ -202,6 +204,22 @@ export default function Chat() {
 
         lenisRef.current = lenis
 
+        lenis.on('scroll', ({ scroll, limit, velocity }) => {
+            const isFarUp = limit - scroll > 150
+            
+            if (!isFarUp) {
+                setShowScrollBottom(false)
+            } else {
+                // Only hide if actively scrolling down
+                if (velocity > 1) {
+                    setShowScrollBottom(false)
+                } else {
+                    // Show if stopped or scrolling up
+                    setShowScrollBottom(true)
+                }
+            }
+        })
+        
         function raf(time) {
             lenis.raf(time)
             requestAnimationFrame(raf)
@@ -436,18 +454,36 @@ export default function Chat() {
                 {/* Messages Area */}
                 <div
                     ref={containerRef}
-                    className="flex-1 overflow-y-auto min-h-0 mb-4 space-y-4 pr-2 overscroll-behavior-contain relative z-0 pointer-events-auto"
+                    className="flex-1 overflow-y-auto min-h-0 mb-4 overscroll-behavior-contain relative z-0 pointer-events-auto"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
                 >
-                    <AnimatePresence>
-                        {messages.map((msg, idx) => (
-                            <MessageBubble key={idx} message={msg} idx={idx} />
-                        ))}
-                    </AnimatePresence>
+                    <div ref={contentRef} className="space-y-4 pr-2 pb-4">
+                        <AnimatePresence>
+                            {messages.map((msg, idx) => (
+                                <MessageBubble key={idx} message={msg} idx={idx} />
+                            ))}
+                        </AnimatePresence>
 
-                    {loading && <TypingIndicator />}
-                    <div ref={messagesEndRef} />
+                        {loading && <TypingIndicator />}
+                        <div ref={messagesEndRef} />
+                    </div>
                 </div>
+
+                <AnimatePresence>
+                    {showScrollBottom && (
+                        <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            onClick={scrollToBottom}
+                            className="absolute bottom-24 right-8 p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-lg shadow-purple-900/50 border border-purple-400/30 z-20 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                        </motion.button>
+                    )}
+                </AnimatePresence>
 
                 {/* Input Area */}
                 <form onSubmit={handleSubmit} className="flex gap-3">
