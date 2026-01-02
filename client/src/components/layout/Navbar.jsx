@@ -47,7 +47,7 @@ const navItems = [
 function SidebarIcon({ item, isActive }) {
     const IconComponent = item.icon
     return (
-        <Link to={item.path} className="relative group">
+        <Link to={item.path} className="relative group flex items-center justify-center w-12 h-12">
             <motion.div
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center cursor-pointer transition-all duration-200
                     ${isActive
@@ -67,7 +67,7 @@ function SidebarIcon({ item, isActive }) {
             {/* Active indicator */}
             {isActive && (
                 <motion.div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full"
+                    className="absolute -left-3 top-3 w-1 h-6 bg-white rounded-r-full"
                     layoutId="activeIndicator"
                 />
             )}
@@ -134,7 +134,7 @@ function Sidebar({ onOpenSettings }) {
                     <SidebarIcon
                         key={item.path}
                         item={item}
-                        isActive={location.pathname === item.path}
+                        isActive={location.pathname.startsWith(item.path)}
                     />
                 ))}
             </nav>
