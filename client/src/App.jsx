@@ -11,6 +11,7 @@ import SystemInfo from './pages/SystemInfo'
 import Onboarding from './pages/Onboarding'
 import { preferencesApi } from './services/api'
 import useHeartbeat from './hooks/useHeartbeat'
+import Lenis from 'lenis'
 
 // Component that handles automatic onboarding redirect after signup
 function OnboardingRedirect({ children }) {
@@ -73,8 +74,24 @@ function OnboardingRedirect({ children }) {
     return children
 }
 
+
 function App() {
     useHeartbeat()
+
+    useEffect(() => {
+        const lenis = new Lenis()
+
+        function raf(time) {
+            lenis.raf(time)
+            requestAnimationFrame(raf)
+        }
+
+        requestAnimationFrame(raf)
+
+        return () => {
+            lenis.destroy()
+        }
+    }, [])
 
     return (
         <Routes>
