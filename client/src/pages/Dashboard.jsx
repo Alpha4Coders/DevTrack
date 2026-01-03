@@ -571,8 +571,10 @@ export default function Dashboard() {
             className={isScrollable ? "" : "h-auto lg:h-[calc(100vh-4rem)] lg:overflow-hidden"}
         >
             {/* Main Container with rounded border */}
-            <div
-                className={`rounded-[2rem] p-4 lg:p-6 border border-white/10 flex flex-col transition-all duration-500 ease-in-out
+            <motion.div
+                layout
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className={`rounded-[2rem] p-4 lg:p-6 border border-white/10 flex flex-col
                     ${isScrollable ? 'h-full overflow-hidden' : 'h-auto lg:h-full lg:overflow-hidden'}`}
                 style={{
                     background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
@@ -731,7 +733,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                 )}
-            </div>
+            </motion.div>
         </motion.div>
     )
 }
