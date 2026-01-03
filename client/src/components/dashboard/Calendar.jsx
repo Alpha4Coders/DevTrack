@@ -209,7 +209,7 @@ export default function Calendar({ onExpand, compact }) {
                 <button
                     key={day}
                     onClick={() => handleDateClick(day)}
-                    className={`h-8 w-full rounded text-xs font-medium transition-all relative
+                    className={`h-10 w-full rounded text-xs font-medium transition-all relative
                         ${isToday ? 'ring-1 ring-inset ring-purple-500' : ''}
                         ${isSelected ? 'bg-purple-500 text-white' : 'hover:bg-white/10 text-slate-300'}
                     `}
@@ -281,13 +281,7 @@ export default function Calendar({ onExpand, compact }) {
 
                         {/* Calendar grid */}
                         <div className="grid grid-cols-7 gap-0.5 mb-3 flex-shrink-0">
-                            {renderDays().map((day) => {
-                                // Ensure standard height
-                                if (day.props.className?.includes('h-10')) {
-                                    return <div key={day.key} className="h-8" />
-                                }
-                                return day
-                            })}
+                            {renderDays()}
                         </div>
                     </div>
 
