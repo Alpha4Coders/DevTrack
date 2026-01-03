@@ -460,6 +460,7 @@ export default function Dashboard() {
     const [recentLogs, setRecentLogs] = useState(cachedData.recentLogs || [])
     const [githubCommits, setGithubCommits] = useState(cachedData.githubCommits || [])
     const [githubStreak, setGithubStreak] = useState(cachedData.githubStreak || 0)
+    const [githubStats, setGithubStats] = useState(cachedData.githubStats || null)
 
     const [githubUsername, setGithubUsername] = useState('')
     const [loading, setLoading] = useState(!hasCachedData('dashboard_data'))
@@ -515,12 +516,14 @@ export default function Dashboard() {
             const newLogStats = logStatsRes.data.data || {}
             const newProjectStats = projectStatsRes.data.data || {}
             const newRecentLogs = logsRes.data.data.logs || []
-            const newGithubCommits = githubRes.data?.data?.commits || []
-            const newGithubStreak = githubRes.data?.data?.streak || 0
+            const newGithubStats = githubRes.data?.data || {}
+            const newGithubCommits = newGithubStats.commits || []
+            const newGithubStreak = newGithubStats.streak || 0
 
             setLogStats(newLogStats)
             setProjectStats(newProjectStats)
             setRecentLogs(newRecentLogs)
+            setGithubStats(newGithubStats)
             setGithubCommits(newGithubCommits)
             setGithubStreak(newGithubStreak)
 
@@ -529,6 +532,7 @@ export default function Dashboard() {
                 logStats: newLogStats,
                 projectStats: newProjectStats,
                 recentLogs: newRecentLogs,
+                githubStats: newGithubStats,
                 githubCommits: newGithubCommits,
                 githubStreak: newGithubStreak
             })
@@ -662,7 +666,7 @@ export default function Dashboard() {
                                             title="Learning"
                                             subtitle="Streak days"
                                             value={logStats?.currentStreak || 0}
-                                            change={logStats?.currentStreak > 0 ? 14 : 0}
+                                            change={logStats?.weeklyGrowth || 0}
                                             color="cyan"
                                             delay={0.15}
                                         />
@@ -671,7 +675,7 @@ export default function Dashboard() {
                                             title="GitHub"
                                             subtitle="Commit streak"
                                             value={githubStreak}
-                                            change={githubStreak > 0 ? 8 : 0}
+                                            change={githubStats?.streakGrowth || 0}
                                             color="purple"
                                             delay={0.2}
                                         />
@@ -680,7 +684,7 @@ export default function Dashboard() {
                                             title="Commits"
                                             subtitle={`${projectStats?.totalProjects || 0} projects`}
                                             value={projectStats?.totalCommits || 0}
-                                            change={27}
+                                            change={projectStats?.totalCommitGrowth || 0}
                                             color="green"
                                             delay={0.25}
                                         />
@@ -689,6 +693,7 @@ export default function Dashboard() {
                                             title="Skills"
                                             subtitle={uniqueTags.slice(0, 2).join(', ') || 'Add tags'}
                                             value={uniqueTags.length}
+                                            change={uniqueTags.length > 0 ? 5 : 0}
                                             color="orange"
                                             delay={0.3}
                                         />
