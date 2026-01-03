@@ -331,19 +331,28 @@ const getStats = async (req, res, next) => {
         console.log('Final streak:', streak);
         console.log('=================================');
 
-        // Count tags
-        const tagCounts = {};
-        logs.forEach((log) => {
-            (log.tags || []).forEach((tag) => {
-                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-            });
-        });
+        // Calculate current week vs previous week for growth
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-        // Top tags
-        const topTags = Object.entries(tagCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([tag, count]) => ({ tag, count }));
+        const currentWeekLogs = logs.filter(log => {
+            const logDate = log.date._seconds ? new Date(log.date._seconds * 1000) : new Date(log.date);
+            return logDate >= oneWeekAgo;
+        }).length;
+
+        const previousWeekLogs = logs.filter(log => {
+            const logDate = log.date._seconds ? new Date(log.date._seconds * 1000) : new Date(log.date);
+            return logDate >= twoWeeksAgo && logDate < oneWeekAgo;
+        }).length;
+
+        let weeklyGrowth = 0;
+        if (previousWeekLogs === 0) {
+            weeklyGrowth = currentWeekLogs > 0 ? 100 : 0;
+        } else {
+            weeklyGrowth = Math.round(((currentWeekLogs - previousWeekLogs) / previousWeekLogs) * 100);
+        }
 
         res.status(200).json({
             success: true,
@@ -353,6 +362,7 @@ const getStats = async (req, res, next) => {
                 uniqueDays: uniqueDates.length,
                 topTags,
                 lastLogDate: uniqueDates[uniqueDates.length - 1] || null,
+                weeklyGrowth
             },
         });
     } catch (error) {

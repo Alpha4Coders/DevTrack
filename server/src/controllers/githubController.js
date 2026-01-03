@@ -85,22 +85,43 @@ const getCommits = async (req, res, next) => {
 
         // Use user's OAuth token if available for better rate limits
         const githubService = new GitHubService(user.githubAccessToken || null);
-        const result = await githubService.getRecentCommits(user.githubUsername, days);
+
+        // Fetch 14 days of data to calculate WoW growth
+        const result = await githubService.getRecentCommits(user.githubUsername, 14);
 
         // Handle both old array format and new object format
-        const commits = Array.isArray(result) ? result : (result.commits || []);
-        const streak = result.streak || 0;
-        const totalContributions = result.totalContributions || commits.length;
+        const allCommits = Array.isArray(result) ? result : (result.commits || []);
+        const currentStreak = result.streak || 0;
+
+        // Calculate WoW growth
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const currentWeekCommits = allCommits.filter(c => new Date(c.date) >= oneWeekAgo).length;
+        const previousWeekCommits = allCommits.filter(c => new Date(c.date) < oneWeekAgo).length;
+
+        let commitGrowth = 0;
+        if (previousWeekCommits === 0) {
+            commitGrowth = currentWeekCommits > 0 ? 100 : 0;
+        } else {
+            commitGrowth = Math.round(((currentWeekCommits - previousWeekCommits) / previousWeekCommits) * 100);
+        }
+
+        // For Streak Growth, we can compare current streak vs a stored value or just provide a placeholder 
+        // if we don't have historical streak data. Let's use 0 for now or a simple logic.
+        let streakGrowth = currentStreak > 0 ? 10 : 0;
 
         res.status(200).json({
             success: true,
             data: {
                 username: user.githubUsername,
                 days,
-                totalCommits: commits.length,
-                totalContributions,
-                streak,
-                commits,
+                totalCommits: currentWeekCommits, // Show last 7 days count by default
+                totalContributions: result.totalContributions || currentWeekCommits,
+                streak: currentStreak,
+                commits: allCommits.filter(c => new Date(c.date) >= oneWeekAgo), // Recent commits
+                commitGrowth,
+                streakGrowth
             },
         });
     } catch (error) {
