@@ -331,6 +331,20 @@ const getStats = async (req, res, next) => {
         console.log('Final streak:', streak);
         console.log('=================================');
 
+        // Count tags
+        const tagCounts = {};
+        logs.forEach((log) => {
+            (log.tags || []).forEach((tag) => {
+                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+        });
+
+        // Top tags
+        const topTags = Object.entries(tagCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([tag, count]) => ({ tag, count }));
+
         // Calculate current week vs previous week for growth
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);

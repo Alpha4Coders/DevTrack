@@ -423,7 +423,7 @@ export default function Learning() {
                         <div className="flex items-center gap-3">
                             <span className="text-red-400">⚠️</span>
                             <p className="text-red-400 flex-1">Error: {error}</p>
-                            <Button variant="ghost" onClick={fetchLogs} className="text-sm">Retry</Button>
+                            <Button variant="ghost" onClick={fetchData} className="text-sm">Retry</Button>
                         </div>
                     </motion.div>
                 )}
