@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@clerk/clerk-react'
-import { Brain, Github, GitCommitHorizontal, Lightbulb, BookOpen, Flame, Trophy } from 'lucide-react'
+import { Brain, Github, GitCommitHorizontal, Lightbulb, BookOpen, Flame, Trophy, Rocket } from 'lucide-react'
 import ProfessionalLoader from '../components/ui/ProfessionalLoader'
 import { useCache } from '../context/CacheContext'
 
@@ -630,14 +630,20 @@ export default function Dashboard() {
                                 <p className="text-slate-400 mb-8 max-w-lg mx-auto">
                                     Start your developer journey by adding a project or logging your first learning session.
                                 </p>
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                    <Link to="/projects">
-                                        <Button size="lg">🚀 Add a Project</Button>
-                                    </Link>
-                                    <Link to="/learning">
-                                        <Button variant="secondary" size="lg">📚 Log Learning</Button>
-                                    </Link>
-                                </div>
+                                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                        <Link to="/projects">
+                                            <Button size="lg" className="flex items-center gap-2">
+                                                <Rocket size={20} />
+                                                Add a Project
+                                            </Button>
+                                        </Link>
+                                        <Link to="/learning">
+                                            <Button variant="secondary" size="lg" className="flex items-center gap-2">
+                                                <BookOpen size={20} />
+                                                Log Learning
+                                            </Button>
+                                        </Link>
+                                    </div>
                             </Card>
                         </motion.div>
                     )}
