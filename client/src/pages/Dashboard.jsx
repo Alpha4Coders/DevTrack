@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@clerk/clerk-react'
-import { Brain, Github, GitCommitHorizontal, Lightbulb } from 'lucide-react'
+import { Brain, Github, GitCommitHorizontal, Lightbulb, BookOpen, Flame, Trophy } from 'lucide-react'
 import ProfessionalLoader from '../components/ui/ProfessionalLoader'
 import { useCache } from '../context/CacheContext'
 
@@ -167,8 +167,8 @@ function PortfolioCard({ totalLogs, currentStreak, logs, compact }) {
 
                 {/* Streak badge */}
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">
-                        🔥 {currentStreak} day streak
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium flex items-center gap-1">
+                        <Flame size={12} className="fill-emerald-400" /> {currentStreak} day streak
                     </span>
                 </div>
 
@@ -294,7 +294,7 @@ function ActivityTable({ logs, logStats, githubCommits, compact }) {
             date: log.date,
             parsedDate: parseDate(log.date),
             tags: log.tags || [],
-            icon: '📚'
+            icon: <BookOpen size={14} />
         })
     })
 
@@ -307,7 +307,7 @@ function ActivityTable({ logs, logStats, githubCommits, compact }) {
             date: commit.date,
             parsedDate: parseDate(commit.date),
             repo: commit.repo,
-            icon: '🐙'
+            icon: <Github size={14} />
         })
     })
 
@@ -335,8 +335,8 @@ function ActivityTable({ logs, logStats, githubCommits, compact }) {
                 <div className="flex items-center justify-between mb-3 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <h3 className="text-base font-semibold text-white">Recent Activity</h3>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                            🔥 {logStats?.currentStreak || 0} days
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium flex items-center gap-1">
+                            <Flame size={12} className="fill-purple-400" /> {logStats?.currentStreak || 0} days
                         </span>
                     </div>
                     <Link to="/learning" className="text-purple-400 text-xs hover:text-purple-300 transition-colors">
@@ -620,11 +620,11 @@ export default function Dashboard() {
                         >
                             <Card className="text-center py-16 border-2 border-dashed border-purple-500/30">
                                 <motion.div
-                                    className="text-7xl mb-6"
+                                    className="flex justify-center mb-6"
                                     animate={{ y: [0, -10, 0] }}
                                     transition={{ duration: 2, repeat: Infinity }}
                                 >
-                                    🎯
+                                    <Trophy size={64} className="text-purple-500" strokeWidth={1.5} />
                                 </motion.div>
                                 <h2 className="text-3xl font-bold mb-4">Welcome to DevTrack!</h2>
                                 <p className="text-slate-400 mb-8 max-w-lg mx-auto">
@@ -650,12 +650,12 @@ export default function Dashboard() {
                         <div className={`grid grid-cols-1 lg:grid-cols-12 ${isScrollable ? 'gap-4 lg:gap-5' : 'gap-4 lg:gap-4 flex-shrink-0'}`}>
                             {/* Portfolio Card - spans 4 cols */}
                             <div className="lg:col-span-4">
-                                    <PortfolioCard
-                                        totalLogs={logStats?.totalLogs || 0}
-                                        currentStreak={logStats?.currentStreak || 0}
-                                        logs={recentLogs}
-                                        compact={!isScrollable}
-                                    />
+                                <PortfolioCard
+                                    totalLogs={logStats?.totalLogs || 0}
+                                    currentStreak={logStats?.currentStreak || 0}
+                                    logs={recentLogs}
+                                    compact={!isScrollable}
+                                />
                             </div>
 
                             {/* Your Stats Section - spans 8 cols */}
@@ -663,48 +663,48 @@ export default function Dashboard() {
                                 <div className="flex items-center justify-between mb-2">
                                     <h2 className="text-base font-semibold text-white">Your Stats</h2>
                                 </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <AssetCard
-                                            icon={<Brain size={ isScrollable ? 20 : 18 } />}
-                                            title="Learning"
-                                            subtitle="Streak days"
-                                            value={logStats?.currentStreak || 0}
-                                            change={logStats?.weeklyGrowth || 0}
-                                            color="cyan"
-                                            delay={0.15}
-                                            compact={!isScrollable}
-                                        />
-                                        <AssetCard
-                                            icon={<Github size={ isScrollable ? 20 : 18 } />}
-                                            title="GitHub"
-                                            subtitle="Commit streak"
-                                            value={githubStreak}
-                                            change={githubStats?.streakGrowth || 0}
-                                            color="purple"
-                                            delay={0.2}
-                                            compact={!isScrollable}
-                                        />
-                                        <AssetCard
-                                            icon={<GitCommitHorizontal size={ isScrollable ? 20 : 18 } />}
-                                            title="Commits"
-                                            subtitle={`${projectStats?.totalProjects || 0} projects`}
-                                            value={projectStats?.totalCommits || 0}
-                                            change={projectStats?.totalCommitGrowth || 0}
-                                            color="green"
-                                            delay={0.25}
-                                            compact={!isScrollable}
-                                        />
-                                        <AssetCard
-                                            icon={<Lightbulb size={ isScrollable ? 20 : 18 } />}
-                                            title="Skills"
-                                            subtitle={uniqueTags.slice(0, 2).join(', ') || 'Add tags'}
-                                            value={uniqueTags.length}
-                                            change={uniqueTags.length > 0 ? 5 : 0}
-                                            color="orange"
-                                            delay={0.3}
-                                            compact={!isScrollable}
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <AssetCard
+                                        icon={<Brain size={isScrollable ? 20 : 18} />}
+                                        title="Learning"
+                                        subtitle="Streak days"
+                                        value={logStats?.currentStreak || 0}
+                                        change={logStats?.weeklyGrowth || 0}
+                                        color="cyan"
+                                        delay={0.15}
+                                        compact={!isScrollable}
+                                    />
+                                    <AssetCard
+                                        icon={<Github size={isScrollable ? 20 : 18} />}
+                                        title="GitHub"
+                                        subtitle="Commit streak"
+                                        value={githubStreak}
+                                        change={githubStats?.streakGrowth || 0}
+                                        color="purple"
+                                        delay={0.2}
+                                        compact={!isScrollable}
+                                    />
+                                    <AssetCard
+                                        icon={<GitCommitHorizontal size={isScrollable ? 20 : 18} />}
+                                        title="Commits"
+                                        subtitle={`${projectStats?.totalProjects || 0} projects`}
+                                        value={projectStats?.totalCommits || 0}
+                                        change={projectStats?.totalCommitGrowth || 0}
+                                        color="green"
+                                        delay={0.25}
+                                        compact={!isScrollable}
+                                    />
+                                    <AssetCard
+                                        icon={<Lightbulb size={isScrollable ? 20 : 18} />}
+                                        title="Skills"
+                                        subtitle={uniqueTags.slice(0, 2).join(', ') || 'Add tags'}
+                                        value={uniqueTags.length}
+                                        change={uniqueTags.length > 0 ? 5 : 0}
+                                        color="orange"
+                                        delay={0.3}
+                                        compact={!isScrollable}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -712,7 +712,7 @@ export default function Dashboard() {
                         <div className={`grid grid-cols-1 lg:grid-cols-12 ${isScrollable ? 'gap-4 lg:gap-5' : 'gap-4 lg:gap-4 flex-1 min-h-0'}`}>
                             {/* Activity Table - spans 7 cols */}
                             <div className="lg:col-span-7">
-                                    <ActivityTable logs={recentLogs} logStats={logStats} githubCommits={githubCommits} />
+                                <ActivityTable logs={recentLogs} logStats={logStats} githubCommits={githubCommits} />
                             </div>
 
                             {/* Calendar - spans 5 cols */}

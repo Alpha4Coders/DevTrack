@@ -412,11 +412,11 @@ export default function Learning() {
 
                 {/* Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <>
-                            <StatCard icon={<BookOpen size={24} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
-                            <StatCard icon={<Flame size={24} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
-                            <StatCard icon={<Calendar size={24} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
-                        </>
+                    <>
+                        <StatCard icon={<BookOpen size={24} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
+                        <StatCard icon={<Flame size={24} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
+                        <StatCard icon={<Calendar size={24} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
+                    </>
                 </div>
 
                 {/* Error State */}
@@ -427,7 +427,7 @@ export default function Learning() {
                         className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 mb-6"
                     >
                         <div className="flex items-center gap-3">
-                            <span className="text-red-400">⚠️</span>
+                            <AlertTriangle className="text-red-400" size={20} />
                             <p className="text-red-400 flex-1">Error: {error}</p>
                             <Button variant="ghost" onClick={fetchData} className="text-sm">Retry</Button>
                         </div>
