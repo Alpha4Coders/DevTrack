@@ -7,10 +7,10 @@ import Calendar from '../components/dashboard/Calendar'
 import MobileAppToken from '../components/MobileAppToken'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import PixelTransition from '../components/ui/PixelTransition'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@clerk/clerk-react'
 import { Brain, Github, GitCommitHorizontal, Lightbulb, BookOpen, Flame, Trophy, Rocket } from 'lucide-react'
-import ProfessionalLoader from '../components/ui/ProfessionalLoader'
 import { useCache } from '../context/CacheContext'
 
 
@@ -555,14 +555,6 @@ export default function Dashboard() {
         setIsScrollable(true)
     }
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <ProfessionalLoader size="lg" />
-            </div>
-        )
-    }
-
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -571,10 +563,8 @@ export default function Dashboard() {
             className={isScrollable ? "" : "h-auto lg:h-[calc(100vh-4rem)] lg:overflow-hidden"}
         >
             {/* Main Container with rounded border */}
-            <motion.div
-                layout
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className={`rounded-[2rem] p-4 lg:p-6 border border-white/10 flex flex-col
+            <div
+                className={`rounded-[2rem] p-4 lg:p-6 border border-white/10 flex flex-col transition-all duration-500 ease-in-out
                     ${isScrollable ? 'h-full overflow-hidden' : 'h-auto lg:h-full lg:overflow-hidden'}`}
                 style={{
                     background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
@@ -741,5 +731,6 @@ export default function Dashboard() {
                 )}
             </motion.div>
         </motion.div>
-    )
+    </PixelTransition>
+  );
 }

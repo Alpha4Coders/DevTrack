@@ -3,8 +3,8 @@ import Button from '../components/ui/Button'
 import { logsApi } from '../services/api'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import ProfessionalLoader from '../components/ui/ProfessionalLoader'
 import { useCache } from '../context/CacheContext'
+import PixelTransition from '../components/ui/PixelTransition'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ReactLenis } from 'lenis/react'
 import DatePicker from '../components/ui/DatePicker'
@@ -380,20 +380,9 @@ export default function Learning() {
         }
     }
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <ProfessionalLoader size="lg" />
-            </div>
-        )
-    }
-
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-        >
+        <PixelTransition loading={loading}>
+            <motion.div>
             {/* Main Container */}
             <div
                 className="rounded-[2rem] p-6 lg:p-8 border border-white/10"
@@ -607,5 +596,6 @@ export default function Learning() {
                 </form>
             </Modal>
         </motion.div>
-    )
+    </PixelTransition>
+  );
 }
