@@ -270,27 +270,24 @@ export default function Calendar({ onExpand, compact }) {
                 <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
                     {/* Calendar Grid Layer */}
                     <div className="absolute inset-0 flex flex-col overflow-y-auto scrollbar-hide">
-                        {/* Calendar Container */}
-                        <div className="flex gap-2 mb-3 flex-shrink-0">
-                            {/* Vertical Day Headers */}
-                            <div className="grid grid-rows-7 gap-0.5">
-                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                                    <div key={day} className="flex items-center justify-center text-xs font-bold text-slate-500 h-8 w-6">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
+                        {/* Day headers */}
+                        <div className="grid grid-cols-7 gap-0.5 mb-1 flex-shrink-0">
+                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                                <div key={day} className="text-center text-xs font-bold text-slate-500 py-1">
+                                    {day}
+                                </div>
+                            ))}
+                        </div>
 
-                            {/* Calendar grid (Horizontal flow) */}
-                            <div className="grid grid-rows-7 grid-flow-col gap-0.5 flex-1">
-                                {renderDays().map((day, i) => {
-                                    // Strip the fixed height class if it's an empty div or button
-                                    if (day.props.className?.includes('h-10')) {
-                                        return <div key={day.key} className="h-8" />
-                                    }
-                                    return day
-                                })}
-                            </div>
+                        {/* Calendar grid */}
+                        <div className="grid grid-cols-7 gap-0.5 mb-3 flex-shrink-0">
+                            {renderDays().map((day) => {
+                                // Ensure standard height
+                                if (day.props.className?.includes('h-10')) {
+                                    return <div key={day.key} className="h-8" />
+                                }
+                                return day
+                            })}
                         </div>
                     </div>
 
