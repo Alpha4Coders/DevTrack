@@ -172,8 +172,10 @@ function MobileNavbar({ onOpenSettings }) {
     // Listen for scroll events (window + dashboard container)
     useEffect(() => {
         const handleScroll = (e) => {
-            // Only apply on mobile dashboard
-            if (!location.pathname.startsWith('/dashboard') || window.innerWidth >= 768) {
+            // Only apply on mobile dashboard or system-info
+            const isAnimatedPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/system-info')
+            
+            if (!isAnimatedPage || window.innerWidth >= 768) {
                 setIsHidden(false)
                 return
             }
