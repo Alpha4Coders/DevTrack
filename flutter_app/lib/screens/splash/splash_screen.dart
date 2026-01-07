@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../config/router.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,13 +17,51 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToNext();
+    _checkAuthAndNavigate();
   }
 
-  Future<void> _navigateToNext() async {
+  Future<void> _checkAuthAndNavigate() async {
+    // Give a small delay for splash animation
     await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      context.go(AppRoutes.login);
+    
+    if (!mounted) return;
+
+    try {
+      final apiService = ApiService();
+      final isAuthenticated = await apiService.isAuthenticated();
+      
+      print('🔐 Session check: isAuthenticated = $isAuthenticated');
+      
+      if (isAuthenticated) {
+        // User has a valid session, check if token is still valid with server
+        final authService = AuthService();
+        final user = await authService.getCurrentUser();
+        
+        if (user != null && mounted) {
+          print('✅ Valid session found for: ${user.name}');
+          // Log remaining session time
+          final remaining = await apiService.getRemainingSessionTime();
+          if (remaining != null) {
+            print('⏰ Session expires in: ${remaining.inDays}d ${remaining.inHours % 24}h');
+          }
+          context.go(AppRoutes.dashboard);
+          return;
+        } else {
+          print('⚠️ Token exists but user validation failed');
+        }
+      }
+      
+      // No valid session, go to login
+      print('🔐 No valid session, redirecting to login');
+      if (mounted) {
+        context.go(AppRoutes.login);
+      }
+    } catch (e) {
+      print('❌ Auth check error: $e');
+      // On error, go to login
+      if (mounted) {
+        context.go(AppRoutes.login);
+      }
     }
   }
 
@@ -40,25 +80,27 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
-                      blurRadius: 24,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.rocket_launch,
-                  size: 48,
-                  color: Colors.white,
+              // Logo - use DevTrack.png
+              ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.4),
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/DevTrack.png',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               )
                   .animate()

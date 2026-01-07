@@ -95,6 +95,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Check auth state (called after deep link auth or app resume)
+  Future<void> checkAuth() async {
+    try {
+      // Check if user is logged in
+      final isLoggedIn = await _authService.isLoggedIn();
+      if (!isLoggedIn) {
+        state = AuthState.initial();
+        return;
+      }
+
+      // Get current user
+      final user = await _authService.getCurrentUser();
+      if (user == null) {
+        state = AuthState.initial();
+        return;
+      }
+
+      // Check onboarding status
+      final hasCompletedOnboarding = await _authService.isOnboardingCompleted();
+
+      state = AuthState.authenticated(
+        user,
+        hasCompletedOnboarding: hasCompletedOnboarding,
+      );
+      
+      print('✅ Auth check successful: ${user.name}');
+    } catch (e) {
+      print('❌ Auth check failed: $e');
+      state = AuthState.error('Auth check failed: $e');
+    }
+  }
+
   /// Login with GitHub via Clerk (opens browser)
   Future<void> loginWithGitHub() async {
     state = state.copyWith(isLoading: true, error: null);

@@ -136,8 +136,18 @@ class SyncService {
       final response = await _api.get(ApiEndpoints.logs);
       final data = response.data;
 
-      if (data['success'] == true && data['logs'] != null) {
-        final logs = (data['logs'] as List)
+      // Handle nested response: { success: true, data: { logs: [...] } }
+      List<dynamic>? logsData;
+      if (data['success'] == true) {
+        if (data['data'] != null && data['data']['logs'] != null) {
+          logsData = data['data']['logs'];
+        } else if (data['logs'] != null) {
+          logsData = data['logs'];
+        }
+      }
+      
+      if (logsData != null) {
+        final logs = logsData
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
         await _storage.cacheLogs(logs);
@@ -154,8 +164,20 @@ class SyncService {
       final response = await _api.get(ApiEndpoints.tasks);
       final data = response.data;
 
-      if (data['success'] == true && data['tasks'] != null) {
-        final tasks = (data['tasks'] as List)
+      // Handle nested response: { success: true, data: { tasks: [...] } }
+      List<dynamic>? tasksData;
+      if (data['success'] == true) {
+        if (data['data'] != null && data['data']['tasks'] != null) {
+          tasksData = data['data']['tasks'];
+        } else if (data['tasks'] != null) {
+          tasksData = data['tasks'];
+        } else if (data['data'] is List) {
+          tasksData = data['data'];
+        }
+      }
+      
+      if (tasksData != null) {
+        final tasks = tasksData
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
         await _storage.cacheTasks(tasks);
@@ -172,8 +194,20 @@ class SyncService {
       final response = await _api.get(ApiEndpoints.projects);
       final data = response.data;
 
-      if (data['success'] == true && data['projects'] != null) {
-        final projects = (data['projects'] as List)
+      // Handle nested response: { success: true, data: { projects: [...] } }
+      List<dynamic>? projectsData;
+      if (data['success'] == true) {
+        if (data['data'] != null && data['data']['projects'] != null) {
+          projectsData = data['data']['projects'];
+        } else if (data['projects'] != null) {
+          projectsData = data['projects'];
+        } else if (data['data'] is List) {
+          projectsData = data['data'];
+        }
+      }
+      
+      if (projectsData != null) {
+        final projects = projectsData
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
         await _storage.cacheProjects(projects);

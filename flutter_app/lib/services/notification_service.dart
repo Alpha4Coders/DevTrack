@@ -17,6 +17,8 @@ class NotificationService {
   
   FirebaseMessaging? _messaging;
   String? _fcmToken;
+  bool _isInitialized = false;
+  bool _isSupported = true;
 
   NotificationService._internal();
 
@@ -27,10 +29,12 @@ class NotificationService {
 
   /// Initialize notification service
   Future<void> initialize() async {
+    if (_isInitialized) return;
+    
     try {
       _messaging = FirebaseMessaging.instance;
       
-      // Request permission on iOS/macOS
+      // Request permission on iOS/macOS/Android 13+
       final settings = await _messaging!.requestPermission(
         alert: true,
         badge: true,
@@ -47,9 +51,17 @@ class NotificationService {
         
         // Set up message handlers
         _setupMessageHandlers();
+        
+        _isInitialized = true;
+        print('✅ Notification service initialized');
+      } else if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        print('⚠️ Notification permission denied');
+        _isSupported = false;
       }
     } catch (e) {
-      print('Notification init error: $e');
+      print('⚠️ Notification init warning: $e');
+      // Don't fail the app if notifications fail to initialize
+      _isSupported = false;
     }
   }
 

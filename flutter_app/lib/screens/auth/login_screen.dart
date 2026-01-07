@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:async';
 import '../../config/theme.dart';
 import '../../config/router.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/deep_link_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,10 +18,42 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _tokenController = TextEditingController();
   bool _showTokenInput = false;
+  StreamSubscription? _deepLinkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenToDeepLinkAuth();
+  }
+
+  void _listenToDeepLinkAuth() {
+    final deepLinkService = DeepLinkService();
+    _deepLinkSubscription = deepLinkService.authStateStream.listen((state) {
+      if (state == DeepLinkAuthState.success) {
+        // Deep link auth successful, check auth state
+        ref.read(authStateProvider.notifier).checkAuth();
+      } else if (state == DeepLinkAuthState.failed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Authentication failed. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } else if (state == DeepLinkAuthState.processing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Processing login...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
     _tokenController.dispose();
+    _deepLinkSubscription?.cancel();
     super.dispose();
   }
 
