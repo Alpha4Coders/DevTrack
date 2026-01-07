@@ -52,6 +52,9 @@ dependencies:
   flutter_svg: ^2.0.9
   package_info_plus: ^8.0.0
   connectivity_plus: ^6.0.0
+  
+  # Deep Linking for OAuth callback
+  app_links: ^6.1.1
 
 dev_dependencies:
   flutter_test:

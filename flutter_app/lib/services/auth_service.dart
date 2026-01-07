@@ -4,36 +4,36 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import 'api_service.dart';
+import 'sync_service.dart';
 
 /// Service for authentication using Clerk (via web redirect)
 /// Since your backend uses Clerk, we need to handle auth via the web app
+/// Now supports deep linking for seamless auth flow
 class AuthService {
   final ApiService _api = ApiService();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   /// The web app URL for sign-in (uses Clerk modal internally)
-  /// Opens the deployed DevTrack web app which has Clerk integrated
   static const String webAppSignInUrl = 'https://devtrack-pwkj.onrender.com';
 
-  /// Alternative: Direct link if web app has a login route
-  static const String webAppLoginUrl = 'https://devtrack-pwkj.onrender.com';
-
-  /// Redirect URL after Clerk auth (configure in Clerk dashboard)
-  static const String redirectUrl = 'https://devtrack-pwkj.onrender.com';
+  /// Mobile auth URL - handles Clerk login and redirects back to app
+  static const String mobileAuthUrl = 'https://devtrack-pwkj.onrender.com/mobile-auth';
 
   /// Login with GitHub via Clerk
-  /// This opens the web app which handles OAuth via Clerk
+  /// Opens the web app's mobile auth page which:
+  /// 1. Triggers Clerk sign-in modal
+  /// 2. After success, redirects back to app via deep link with session token
   Future<bool> loginWithGitHub() async {
     try {
-      // Open the deployed web app - user signs in via Clerk modal there
-      // After login, they copy the session token and paste it in the app
-      final signInUrl = Uri.parse(webAppSignInUrl);
+      // Open the mobile auth page - it will handle Clerk login
+      // and redirect back to the app with the session token
+      final signInUrl = Uri.parse(mobileAuthUrl);
 
       if (await canLaunchUrl(signInUrl)) {
         await launchUrl(signInUrl, mode: LaunchMode.externalApplication);
         return true;
       } else {
-        print('Could not launch web app URL');
+        print('Could not launch mobile auth URL');
         return false;
       }
     } catch (e) {
@@ -44,9 +44,10 @@ class AuthService {
 
   /// For development/testing: Manual token entry
   /// The user can sign in via web and paste the session token here
+  /// Token will be valid for 7 days
   Future<User?> loginWithToken(String sessionToken) async {
     try {
-      // Store the token
+      // Store the token (also sets 7-day expiry automatically)
       await _api.setAuthToken(sessionToken);
 
       // Verify by getting user info
@@ -54,6 +55,19 @@ class AuthService {
       if (user == null) {
         await _api.clearAuthToken();
         return null;
+      }
+
+      // Sync user data after successful login
+      print('🔄 Triggering full sync after login...');
+      final syncService = SyncService();
+      await syncService.initialize();
+      final syncResult = await syncService.fullSync();
+      print('✅ Post-login sync: ${syncResult.message}');
+
+      // Log session info
+      final remainingTime = await _api.getRemainingSessionTime();
+      if (remainingTime != null) {
+        print('⏰ Session will expire in: ${remainingTime.inDays} days');
       }
 
       return user;

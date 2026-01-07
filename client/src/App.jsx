@@ -10,6 +10,7 @@ import Projects from './pages/Projects'
 import Chat from './pages/Chat'
 import SystemInfo from './pages/SystemInfo'
 import Onboarding from './pages/Onboarding'
+import MobileAuth from './pages/MobileAuth'
 import { preferencesApi } from './services/api'
 import useHeartbeat from './hooks/useHeartbeat'
 import Lenis from 'lenis'
@@ -123,6 +124,9 @@ function App() {
 
                     {/* Preview Landing Page (for testing while signed in) */}
                     <Route path="/preview-landing" element={<Landing />} />
+
+                    {/* Mobile Auth Page - for Flutter app authentication */}
+                    <Route path="/mobile-auth" element={<MobileAuth />} />
 
                     {/* Catch all - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />
