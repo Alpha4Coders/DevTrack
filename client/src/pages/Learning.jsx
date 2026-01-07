@@ -106,20 +106,20 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
             transition={{ delay }}
         >
             <div
-                className={`rounded-2xl p-4 md:p-5 border ${c.border} backdrop-blur-sm h-full`}
+                className={`rounded-2xl p-3 md:p-4 border ${c.border} backdrop-blur-sm h-full`}
                 style={{
                     background: 'linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95))',
                 }}
             >
-                <div className="flex items-start gap-3 md:gap-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.iconBg} flex items-center justify-center text-xl shadow-lg ${c.glow} flex-shrink-0`}>
+                <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.iconBg} flex items-center justify-center text-lg shadow-lg ${c.glow} flex-shrink-0`}>
                         {icon}
                     </div>
-                    <div className="min-w-0 flex flex-col justify-center min-h-[3rem]">
-                        <p className="text-2xl font-bold text-white leading-none mb-1">
+                    <div className="min-w-0 flex flex-col justify-center min-h-[2.5rem]">
+                        <p className="text-xl font-bold text-white leading-none mb-1">
                             <AnimatedCounter value={value} />
                         </p>
-                        <p className="text-slate-400 text-sm leading-tight line-clamp-2">{label}</p>
+                        <p className="text-slate-400 text-xs leading-tight line-clamp-2">{label}</p>
                     </div>
                 </div>
             </div>
@@ -467,13 +467,13 @@ export default function Learning() {
                 {/* Stats Row */}
                 <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
                     <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
-                        <StatCard icon={<BookOpen size={24} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
+                        <StatCard icon={<BookOpen size={20} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
                     </div>
                     <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
-                        <StatCard icon={<Flame size={24} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
+                        <StatCard icon={<Flame size={20} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
                     </div>
                     <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
-                        <StatCard icon={<Calendar size={24} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
+                        <StatCard icon={<Calendar size={20} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
                     </div>
                 </div>
 

@@ -101,7 +101,7 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
       transition={{ delay }}
     >
       <div
-        className={`rounded-2xl p-4 md:p-5 border ${c.border} backdrop-blur-sm h-full`}
+        className={`rounded-2xl p-3 md:p-5 border ${c.border} backdrop-blur-sm h-full`}
         style={{
           background:
             "linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95))",
@@ -109,15 +109,15 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
       >
         <div className="flex items-start gap-3 md:gap-4">
           <div
-            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.iconBg} flex items-center justify-center text-xl shadow-lg ${c.glow} flex-shrink-0`}
+            className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${c.iconBg} flex items-center justify-center text-lg md:text-xl shadow-lg ${c.glow} flex-shrink-0`}
           >
             {icon}
           </div>
           <div className="min-w-0 flex flex-col justify-center min-h-[3rem]">
-            <p className="text-2xl font-bold text-white leading-none mb-1">
+            <p className="text-xl md:text-2xl font-bold text-white leading-none mb-1">
               <AnimatedCounter value={value} />
             </p>
-            <p className="text-slate-400 text-sm leading-tight line-clamp-2">
+            <p className="text-slate-400 text-xs md:text-sm leading-tight line-clamp-2">
               {label}
             </p>
           </div>
@@ -1457,7 +1457,7 @@ export default function Projects() {
           <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
             <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
-                icon={<Folder className="w-6 h-6" />}
+                icon={<Folder className="w-5 h-5 md:w-6 md:h-6" />}
                 label="Total Projects"
                 value={stats.totalProjects || 0}
                 color="purple"
@@ -1466,7 +1466,7 @@ export default function Projects() {
             </div>
             <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
-                icon={<Activity className="w-6 h-6" />}
+                icon={<Activity className="w-5 h-5 md:w-6 md:h-6" />}
                 label="Active"
                 value={stats.activeProjects || 0}
                 color="cyan"
@@ -1475,7 +1475,7 @@ export default function Projects() {
             </div>
             <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
-                icon={<CheckCircle className="w-6 h-6" />}
+                icon={<CheckCircle className="w-5 h-5 md:w-6 md:h-6" />}
                 label="Completed"
                 value={stats.completedProjects || 0}
                 color="green"
@@ -1484,7 +1484,7 @@ export default function Projects() {
             </div>
             <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
-                icon={<GitCommitHorizontal className="w-6 h-6" />}
+                icon={<GitCommitHorizontal className="w-5 h-5 md:w-6 md:h-6" />}
                 label="Total Commits"
                 value={stats.totalCommits || 0}
                 color="orange"
