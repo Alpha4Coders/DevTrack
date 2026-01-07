@@ -211,7 +211,7 @@ export default function GitHubInsights() {
                             <History className="text-purple-400" size={14} />
                             <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Activity DNA</h3>
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <StatMini icon={History} label="Commits" value={stats.totalCommits} color="blue" />
                             <StatMini icon={GitPullRequest} label="PRs" value={stats.totalPRs} color="purple" />
                             <StatMini icon={Target} label="Issues" value={stats.totalIssuesSolved} color="green" />
@@ -225,7 +225,7 @@ export default function GitHubInsights() {
                             <Lock className="text-blue-400" size={14} />
                             <h3 className="text-[10px] font-black text-white uppercase tracking-widest">Source Inventory</h3>
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <StatMini icon={Code2} label="Total" value={stats.totalRepos} color="slate" />
                             <StatMini icon={Globe} label="Public" value={stats.publicRepos} color="blue" />
                             <StatMini icon={Lock} label="Private" value={stats.privateRepos} color="red" />
