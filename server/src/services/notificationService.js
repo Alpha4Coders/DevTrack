@@ -4,6 +4,8 @@
  */
 
 const { admin, collections } = require('../config/firebase');
+const { getGeminiService } = require('./geminiService');
+const GitHubService = require('./githubService');
 
 // Motivational message templates based on user goals
 const GOAL_MESSAGES = {
@@ -121,23 +123,18 @@ class NotificationService {
             // Get personalized motivational title
             const title = this.getMotivationalMessage(user.userGoal);
 
-            // Build personalized body message
-            let body = '';
+            // Generate AI motivation message
+            const gemini = getGeminiService();
+            const stats = {
+                streak: user.streak || 0,
+                lastStartTime: user.lastStartTime || '',
+                userGoal: user.userGoal || '',
+                reminderMode: preferences.reminderMode || 'adaptive',
+                lastActive: user.updatedAt
+            };
 
-            if (preferences.reminderMode === 'adaptive' && user.lastStartTime) {
-                body = `You started at ${user.lastStartTime} yesterday. Let's stay consistent today!`;
-            } else if (preferences.reminderMode === 'fixed') {
-                body = `It's your scheduled coding time. Let's build something amazing!`;
-            } else {
-                body = `Time to write some code and keep your streak alive!`;
-            }
-
-            // Add goal context if available
-            if (user.userGoal) {
-                body += ` Focus: ${user.userGoal}`;
-            }
-
-            const notification = { title, body };
+            const aiBody = await gemini.generateMotivation(stats);
+            const notification = { title, body: aiBody };
 
             const data = {
                 type: 'consistency_reminder',
@@ -404,6 +401,164 @@ class NotificationService {
         } catch (error) {
             console.error('Error sending task notification:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Comprehensive check for all dynamic notification triggers
+     * Checks: Daily commits, Daily logs, Streak status, Inactive projects
+     */
+    async checkDynamicNotifs() {
+        try {
+            console.log('🔍 Starting dynamic notification check...');
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            // Get all users with FCM tokens
+            const usersSnapshot = await collections.users()
+                .where('fcmToken', '!=', null)
+                .get();
+
+            console.log(`👤 Found ${usersSnapshot.docs.length} users to check`);
+
+            const gemini = getGeminiService();
+
+            for (const doc of usersSnapshot.docs) {
+                const userId = doc.id;
+                const user = doc.data();
+                const preferences = user.preferences || {};
+
+                // Skip if notifications are disabled in preferences
+                if (preferences.notifications === false) continue;
+
+                // 1. Check Daily Commit Activity
+                const hasCommits = await this.checkTodayCommits(user, todayStr);
+
+                // 2. Check Daily Learning logs
+                const hasLogs = await this.checkTodayLogs(userId, todayStr);
+
+                // 3. Evaluate notification trigger
+                let notificationType = null;
+                let notificationData = {};
+
+                if (!hasCommits && !hasLogs) {
+                    // Check if day is almost ending (e.g., after 8 PM)
+                    const hour = now.getHours();
+                    if (hour >= 20) {
+                        notificationType = 'missed_activity';
+                    }
+                }
+
+                // 4. Check for project inactivity (if last push was weeks/months ago)
+                if (!notificationType) {
+                    const inactiveProject = await this.checkProjectInactivity(user);
+                    if (inactiveProject) {
+                        notificationType = 'project_revival';
+                        notificationData.projectName = inactiveProject.name;
+                        notificationData.lastPushed = inactiveProject.lastPushed;
+                    }
+                }
+
+                // 5. Send Notification if trigger found
+                if (notificationType) {
+                    console.log(`🔔 Triggering ${notificationType} for user ${userId}`);
+
+                    // Generate AI motivation message
+                    const stats = {
+                        streak: user.streak || 0,
+                        lastActive: user.updatedAt,
+                        projectName: notificationData.projectName
+                    };
+
+                    const aiBody = await gemini.generateMotivation(stats);
+
+                    let title = '🔥 Don\'t break your streak!';
+                    if (notificationType === 'project_revival') {
+                        title = `🚀 Remember ${notificationData.projectName}?`;
+                    }
+
+                    await this.sendNotification(user.fcmToken, {
+                        title,
+                        body: aiBody
+                    }, {
+                        type: notificationType,
+                        ...notificationData
+                    });
+                }
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error in checkDynamicNotifs:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Check if user has made any commits today
+     */
+    async checkTodayCommits(user, todayStr) {
+        try {
+            if (!user.githubUsername || !user.githubToken) return true; // Assume true if not linked to avoid spam
+
+            const gh = new GitHubService(user.githubToken);
+            const activity = await gh.getActivitySummary(user.githubUsername);
+
+            // Check if there are push events today
+            // getActivitySummary returns todayEvents (PushEvents, PREvents, IssueEvents)
+            return activity.todayEvents > 0;
+        } catch (error) {
+            console.error(`Error checking GitHub activity for ${user.githubUsername}:`, error.message);
+            return true; // Fallback to avoid false positives
+        }
+    }
+
+    /**
+     * Check if user has added a learning log today
+     */
+    async checkTodayLogs(userId, todayStr) {
+        try {
+            const logsSnapshot = await collections.logs()
+                .where('uid', '==', userId)
+                .where('date', '==', todayStr)
+                .get();
+
+            return !logsSnapshot.empty;
+        } catch (error) {
+            console.error(`Error checking logs for ${userId}:`, error.message);
+            return true;
+        }
+    }
+
+    /**
+     * Check for projects that haven't been touched in a long time
+     */
+    async checkProjectInactivity(user) {
+        try {
+            if (!user.githubUsername || !user.githubToken) return null;
+
+            const gh = new GitHubService(user.githubToken);
+            const repos = await gh.getRepos(user.githubUsername, 5); // Check top 5 active repos
+
+            const now = new Date();
+            const twoWeeksAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+
+            for (const repo of repos) {
+                const lastPush = new Date(repo.updatedAt);
+                if (lastPush < twoWeeksAgo) {
+                    // Check if it's been more than 2 weeks but less than 3 months (to keep it relevant)
+                    const threeMonthsAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+                    if (lastPush > threeMonthsAgo) {
+                        return {
+                            name: repo.name,
+                            lastPushed: repo.updatedAt
+                        };
+                    }
+                }
+            }
+            return null;
+        } catch (error) {
+            return null;
         }
     }
 }

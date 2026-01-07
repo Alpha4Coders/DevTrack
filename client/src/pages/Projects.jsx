@@ -1347,18 +1347,12 @@ export default function Projects() {
   return (
     <PixelTransition loading={loading}>
       <motion.div>
-        {/* Main Container */}
+        {/* Main Container - Background removed */}
         <div
-          className="rounded-[2rem] p-6 lg:p-8 border border-white/10 flex flex-col h-[calc(100vh-6rem)] overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))",
-            boxShadow:
-              "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-          }}
+          className="px-4 md:px-6 py-0 flex flex-col h-[calc(100vh-4rem)] overflow-hidden overflow-x-hidden"
         >
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 flex-shrink-0">
             <div>
               <h1 className="text-3xl font-bold text-white mb-1">Projects</h1>
               <p className="text-slate-400 text-sm">
@@ -1375,8 +1369,8 @@ export default function Projects() {
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 flex-shrink-0">
-            <>
+          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
+            <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
                 icon={<Folder className="w-6 h-6" />}
                 label="Total Projects"
@@ -1384,6 +1378,8 @@ export default function Projects() {
                 color="purple"
                 delay={0.1}
               />
+            </div>
+            <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
                 icon={<Activity className="w-6 h-6" />}
                 label="Active"
@@ -1391,6 +1387,8 @@ export default function Projects() {
                 color="cyan"
                 delay={0.15}
               />
+            </div>
+            <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
                 icon={<CheckCircle className="w-6 h-6" />}
                 label="Completed"
@@ -1398,6 +1396,8 @@ export default function Projects() {
                 color="green"
                 delay={0.2}
               />
+            </div>
+            <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
               <StatCard
                 icon={<GitCommitHorizontal className="w-6 h-6" />}
                 label="Total Commits"
@@ -1405,12 +1405,13 @@ export default function Projects() {
                 color="orange"
                 delay={0.25}
               />
-            </>
+            </div>
           </div>
 
           {/* Scrollable Content Area */}
           <div
             ref={projectsContainerRef}
+            id="projects-scroll-container"
             className="flex-1 overflow-y-auto min-h-0 pr-6 -mr-2 relative"
           >
             <div ref={projectsContentRef} className="pb-4">

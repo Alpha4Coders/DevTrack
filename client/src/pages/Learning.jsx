@@ -170,7 +170,7 @@ function EntryCard({ entry, onEdit, onDelete, delay = 0 }) {
 
                         <div className="flex flex-row items-center justify-between gap-2 lg:gap-5 mb-2">
                             <h3 className="text-xs lg:text-sm font-bold text-white leading-tight whitespace-nowrap min-w-0 truncate">{formatDate(entry.date)}</h3>
-                            <span className="bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-xl text-slate-400 text-[10px] lg:text-xs flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                            <span className="bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-xl text-slate-400 text-[10px] lg:text-xs hidden sm:flex items-center gap-1 whitespace-nowrap flex-shrink-0">
                                 <Clock size={12} />
                                 {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
                             </span>
@@ -448,16 +448,12 @@ export default function Learning() {
     return (
         <PixelTransition loading={loading}>
             <motion.div>
-            {/* Main Container */}
+            {/* Main Container - Background removed */}
             <div
-                className="rounded-[2rem] p-6 lg:p-8 border border-white/10 flex flex-col h-[calc(100vh-6rem)] overflow-hidden"
-                style={{
-                    background: 'linear-gradient(145deg, rgba(15, 20, 35, 0.8), rgba(10, 15, 25, 0.9))',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                }}
+                className="px-4 md:px-6 py-0 flex flex-col h-[calc(100vh-4rem)] overflow-hidden overflow-x-hidden"
             >
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 flex-shrink-0">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-1">Learning Tracker</h1>
                         <p className="text-slate-400 text-sm">Track your courses, tutorials, and skills</p>
@@ -469,17 +465,22 @@ export default function Learning() {
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 flex-shrink-0">
-                    <>
+                <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<BookOpen size={24} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
+                    </div>
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<Flame size={24} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
+                    </div>
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<Calendar size={24} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
-                    </>
+                    </div>
                 </div>
 
                 {/* Scrollable Content Area */}
                 <div 
                     ref={learningContainerRef}
+                    id="learning-scroll-container"
                     className="flex-1 overflow-y-auto min-h-0 pr-6 -mr-6 relative"
                 >
                     <div ref={learningContentRef} className="pb-4">

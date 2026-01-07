@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { preferencesApi, notificationsApi } from '../services/api';
+import { preferencesApi, notificationsApi, authApi } from '../services/api';
 import {
     Rocket,
     Zap,
@@ -477,6 +477,13 @@ const Onboarding = () => {
                 preferences,
                 userGoal,
             });
+
+            // Trigger sync to get GitHub data
+            try {
+                await authApi.sync();
+            } catch (syncErr) {
+                console.error('Initial sync failed:', syncErr);
+            }
 
             // Request notification permission
             if ('Notification' in window && Notification.permission === 'default') {

@@ -83,11 +83,37 @@ const getCommits = async (req, res, next) => {
             });
         }
 
-        console.log(`🔍 Fetching GitHub data for user: ${user.githubUsername} (userId: ${userId})`);
-        console.log(`🔑 Using ${user.githubAccessToken ? 'user OAuth token' : 'server PAT'}`);
+        // Get FRESH OAuth token from Clerk for accurate contribution data
+        let githubAccessToken = user.githubAccessToken || null;
 
-        // Use user's OAuth token if available for better rate limits
-        const githubService = new GitHubService(user.githubAccessToken || null);
+        try {
+            const { clerkClient } = require('@clerk/clerk-sdk-node');
+            const oauthTokens = await clerkClient.users.getUserOauthAccessToken(
+                userId,
+                'oauth_github'
+            );
+
+            if (oauthTokens?.data?.[0]?.token) {
+                githubAccessToken = oauthTokens.data[0].token;
+                console.log('🔑 Using FRESH OAuth token from Clerk for contributions');
+
+                // Update the cached token in Firestore for future use
+                await collections.users().doc(userId).update({
+                    githubAccessToken: githubAccessToken,
+                    updatedAt: new Date().toISOString()
+                });
+            } else {
+                console.log('⚠️ No fresh OAuth token available, using cached or PAT');
+            }
+        } catch (tokenErr) {
+            console.warn('⚠️ Could not get fresh OAuth token from Clerk:', tokenErr.message);
+        }
+
+        console.log(`🔍 Fetching GitHub data for user: ${user.githubUsername} (userId: ${userId})`);
+        console.log(`🔑 Using ${githubAccessToken ? 'user OAuth token' : 'server PAT'}`);
+
+        // Use fresh OAuth token if available for accurate contributions (including private)
+        const githubService = new GitHubService(githubAccessToken);
 
         // Fetch 14 days of data to calculate WoW growth
         const result = await githubService.getRecentCommits(user.githubUsername, 14);
@@ -428,6 +454,87 @@ const createRepo = async (req, res, next) => {
     }
 };
 
+/**
+ * Get comprehensive GitHub insights for bento grid
+ * GET /api/github/insights
+ */
+const getInsights = async (req, res, next) => {
+    try {
+        const { userId } = req.auth;
+
+        const userDoc = await collections.users().doc(userId).get();
+        if (!userDoc.exists) {
+            throw new APIError('User not found', 404);
+        }
+
+        let user = userDoc.data();
+        let githubAccessToken = user.githubAccessToken || null;
+
+        // Get fresh OAuth token from Clerk for full access
+        const { clerkClient } = require('@clerk/clerk-sdk-node');
+        try {
+            const oauthTokens = await clerkClient.users.getUserOauthAccessToken(userId, 'oauth_github');
+            if (oauthTokens?.data?.[0]?.token) {
+                githubAccessToken = oauthTokens.data[0].token;
+            }
+        } catch (tokenErr) {
+            console.warn('Could not get fresh OAuth token:', tokenErr.message);
+        }
+
+        // Auto-sync GitHub username if missing
+        if (!user.githubUsername) {
+            console.log('🔄 GitHub username missing, attempting auto-sync...');
+            try {
+                const clerkUser = await clerkClient.users.getUser(userId);
+                let githubUsername = null;
+
+                // Check externalAccounts
+                if (clerkUser.externalAccounts) {
+                    const ghAccount = clerkUser.externalAccounts.find(
+                        acc => acc.provider === 'github' || acc.provider === 'oauth_github'
+                    );
+                    if (ghAccount) {
+                        githubUsername = ghAccount.username;
+                    }
+                }
+
+                // Fallback: try GitHub API with token
+                if (!githubUsername && githubAccessToken) {
+                    const { Octokit } = require('octokit');
+                    const octokit = new Octokit({ auth: githubAccessToken });
+                    const { data: ghUser } = await octokit.rest.users.getAuthenticated();
+                    githubUsername = ghUser.login;
+                }
+
+                if (githubUsername) {
+                    await collections.users().doc(userId).update({
+                        githubUsername,
+                        githubAccessToken,
+                        updatedAt: new Date().toISOString()
+                    });
+                    user.githubUsername = githubUsername;
+                    console.log('✅ Auto-synced GitHub username:', githubUsername);
+                } else {
+                    throw new APIError('GitHub account not connected. Please sign out and sign in with GitHub.', 400);
+                }
+            } catch (syncErr) {
+                console.error('Auto-sync failed:', syncErr.message);
+                throw new APIError('GitHub account not connected. Please sign out and sign in with GitHub.', 400);
+            }
+        }
+
+        const githubService = new GitHubService(githubAccessToken);
+        const insights = await githubService.getGitHubInsights(user.githubUsername);
+
+        res.status(200).json({
+            success: true,
+            data: insights,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getActivity,
     getCommits,
@@ -437,5 +544,6 @@ module.exports = {
     analyzeRepo,
     getRepoLanguages,
     createRepo,
+    getInsights,
 };
 

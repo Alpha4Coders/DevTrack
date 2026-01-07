@@ -4,6 +4,7 @@
 
 const app = require('./src/app');
 const { initializeFirebase } = require('./src/config/firebase');
+const { initializeScheduler } = require('./src/utils/scheduler');
 
 const PORT = process.env.PORT || 9000;
 
@@ -13,6 +14,9 @@ const startServer = async () => {
         // Initialize Firebase Admin SDK
         await initializeFirebase();
         console.log('✅ Firebase initialized successfully');
+
+        // Initialize Scheduler
+        initializeScheduler();
 
         // Start Express server
         app.listen(PORT, () => {

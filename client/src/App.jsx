@@ -10,6 +10,8 @@ import Projects from './pages/Projects'
 import Chat from './pages/Chat'
 import SystemInfo from './pages/SystemInfo'
 import Onboarding from './pages/Onboarding'
+import MobileAuth from './pages/MobileAuth'
+import GitHubInsights from './pages/GitHubInsights'
 import { preferencesApi } from './services/api'
 import useHeartbeat from './hooks/useHeartbeat'
 import Lenis from 'lenis'
@@ -118,11 +120,15 @@ function App() {
                         <Route path="/learning" element={<Learning />} />
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/chat" element={<Chat />} />
+                        <Route path="/github-insights" element={<GitHubInsights />} />
                         <Route path="/system-info" element={<SystemInfo />} />
                     </Route>
 
                     {/* Preview Landing Page (for testing while signed in) */}
                     <Route path="/preview-landing" element={<Landing />} />
+
+                    {/* Mobile Auth Page - for Flutter app authentication */}
+                    <Route path="/mobile-auth" element={<MobileAuth />} />
 
                     {/* Catch all - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />

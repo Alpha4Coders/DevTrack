@@ -2,11 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
+/// Callback for when session expires and user needs to re-authenticate
+typedef SessionExpiredCallback = void Function();
+
 /// Main API service for communicating with DevTrack backend
 class ApiService {
   static ApiService? _instance;
   late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  
+  /// Session expiry duration (7 days)
+  static const Duration sessionDuration = Duration(days: 7);
+  
+  /// Callback when session expires
+  static SessionExpiredCallback? onSessionExpired;
 
   ApiService._internal() {
     _dio = Dio(BaseOptions(
@@ -22,6 +31,21 @@ class ApiService {
     // Add interceptors for auth and logging
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Check if session is expired before making request
+        final isExpired = await isSessionExpired();
+        if (isExpired) {
+          print('⚠️ Session expired, clearing token');
+          await clearAuthToken();
+          onSessionExpired?.call();
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              error: 'Session expired. Please sign in again.',
+              type: DioExceptionType.cancel,
+            ),
+          );
+        }
+        
         // Add auth token to requests
         final token = await _safeRead('auth_token');
         if (token != null) {
@@ -34,8 +58,16 @@ class ApiService {
         print('← ${response.statusCode} ${response.requestOptions.path}');
         return handler.next(response);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
         print('✖ ${error.response?.statusCode} ${error.message}');
+        
+        // Handle 401 Unauthorized - session may have been revoked server-side
+        if (error.response?.statusCode == 401) {
+          print('🔒 Token rejected by server, clearing session');
+          await clearAuthToken();
+          onSessionExpired?.call();
+        }
+        
         return handler.next(error);
       },
     ));
@@ -67,7 +99,7 @@ class ApiService {
     }
   }
 
-  /// Store auth token securely
+  /// Store auth token securely with expiry timestamp
   Future<void> setAuthToken(String token) async {
     try {
       await _storage.write(
@@ -75,6 +107,16 @@ class ApiService {
         value: token,
         aOptions: const AndroidOptions(encryptedSharedPreferences: true),
       );
+      
+      // Store session expiry timestamp (7 days from now)
+      final expiryTime = DateTime.now().add(sessionDuration);
+      await _storage.write(
+        key: 'session_expiry',
+        value: expiryTime.toIso8601String(),
+        aOptions: const AndroidOptions(encryptedSharedPreferences: true),
+      );
+      
+      print('✅ Token stored, expires: ${expiryTime.toIso8601String()}');
     } catch (e) {
       print('Error writing to secure storage: $e');
     }
@@ -92,15 +134,61 @@ class ApiService {
         key: 'auth_token',
         aOptions: const AndroidOptions(encryptedSharedPreferences: true),
       );
+      await _storage.delete(
+        key: 'session_expiry',
+        aOptions: const AndroidOptions(encryptedSharedPreferences: true),
+      );
+      print('🧹 Auth token and session expiry cleared');
     } catch (e) {
       print('Error deleting from secure storage: $e');
     }
   }
 
-  /// Check if user is authenticated
+  /// Check if session has expired (based on stored expiry timestamp)
+  Future<bool> isSessionExpired() async {
+    try {
+      final expiryStr = await _safeRead('session_expiry');
+      if (expiryStr == null) {
+        // No expiry stored, session is valid (new login)
+        return false;
+      }
+      
+      final expiryTime = DateTime.parse(expiryStr);
+      final isExpired = DateTime.now().isAfter(expiryTime);
+      
+      if (isExpired) {
+        print('⏰ Session expired at: $expiryStr');
+      }
+      
+      return isExpired;
+    } catch (e) {
+      print('Error checking session expiry: $e');
+      return false;
+    }
+  }
+
+  /// Get remaining session time
+  Future<Duration?> getRemainingSessionTime() async {
+    try {
+      final expiryStr = await _safeRead('session_expiry');
+      if (expiryStr == null) return null;
+      
+      final expiryTime = DateTime.parse(expiryStr);
+      final remaining = expiryTime.difference(DateTime.now());
+      
+      return remaining.isNegative ? Duration.zero : remaining;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if user is authenticated (token exists and not expired)
   Future<bool> isAuthenticated() async {
     final token = await _safeRead('auth_token');
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+    
+    final isExpired = await isSessionExpired();
+    return !isExpired;
   }
 
   // ==================== HTTP METHODS ====================

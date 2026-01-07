@@ -46,15 +46,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 floating: true,
                 title: Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/images/DevTrack.png',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.contain,
                       ),
-                      child:
-                          const Icon(Icons.code, color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 12),
                     const Text('DevTrack'),

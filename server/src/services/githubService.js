@@ -57,7 +57,47 @@ class GitHubService {
     }
 
     /**
-     * Get ALL commits for a specific repo (paginated)
+     * Get the TRUE total commit count for a repository
+     * Uses the Contributors Stats API which gives accurate totals
+     */
+    async getTrueCommitCount(owner, repo) {
+        try {
+            // Method 1: Try to get from contributors stats (most accurate)
+            const { data: contributors } = await this.octokit.rest.repos.listContributors({
+                owner,
+                repo,
+                per_page: 100,
+                anon: 'true' // Include anonymous contributors
+            });
+
+            if (contributors && contributors.length > 0) {
+                const totalCommits = contributors.reduce((sum, c) => sum + (c.contributions || 0), 0);
+                console.log(`📊 True commit count for ${owner}/${repo}: ${totalCommits} (from ${contributors.length} contributors)`);
+                return totalCommits;
+            }
+
+            // Method 2: Fallback - use participation stats
+            const { data: participation } = await this.octokit.rest.repos.getParticipationStats({
+                owner,
+                repo
+            });
+
+            if (participation && participation.all) {
+                const totalCommits = participation.all.reduce((a, b) => a + b, 0);
+                console.log(`📊 True commit count (participation): ${totalCommits}`);
+                return totalCommits;
+            }
+
+            return 0;
+        } catch (error) {
+            console.error('Error getting true commit count:', error.message);
+            // Fallback: estimate from paginated fetch
+            return null;
+        }
+    }
+
+    /**
+     * Get commits for a specific repo (paginated, for details)
      */
     async getAllCommitsForRepo(owner, repo, maxCommits = 100) {
         try {
@@ -455,6 +495,161 @@ class GitHubService {
     }
 
     /**
+     * Get comprehensive GitHub insights for bento grid
+     */
+    async getGitHubInsights(username) {
+        try {
+            const query = `
+                query($username: String!) {
+                    user(login: $username) {
+                        name
+                        login
+                        avatarUrl
+                        bio
+                        createdAt
+                        followers { totalCount }
+                        following { totalCount }
+                        repositories(first: 100, ownerAffiliations: OWNER) {
+                            totalCount
+                            nodes {
+                                isPrivate
+                                isFork
+                                stargazerCount
+                                forkCount
+                                languages(first: 5, orderBy: {field: SIZE, direction: DESC}) {
+                                    edges {
+                                        size
+                                        node {
+                                            name
+                                            color
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        contributionsCollection {
+                            totalCommitContributions
+                            totalPullRequestContributions
+                            totalIssueContributions
+                            totalRepositoriesWithContributedCommits
+                            totalPullRequestReviewContributions
+                            contributionCalendar {
+                                totalContributions
+                            }
+                        }
+                        issues(states: CLOSED, first: 1) {
+                            totalCount
+                        }
+                        pullRequests(states: MERGED, first: 1) {
+                            totalCount
+                        }
+                        starredRepositories {
+                            totalCount
+                        }
+                        watching {
+                            totalCount
+                        }
+                    }
+                }
+            `;
+
+            const response = await this.octokit.graphql(query, { username });
+            const user = response.user;
+
+            if (!user) return null;
+
+            // Calculate total stars across user's repos
+            const totalStars = user.repositories.nodes.reduce((sum, repo) => sum + repo.stargazerCount, 0);
+            const totalForks = user.repositories.nodes.reduce((sum, repo) => sum + repo.forkCount, 0);
+            const publicRepos = user.repositories.nodes.filter(r => !r.isPrivate).length;
+            const privateRepos = user.repositories.nodes.filter(r => r.isPrivate).length;
+            const sourceRepos = user.repositories.nodes.filter(r => !r.isFork).length;
+
+            // Aggregate languages
+            const languageMap = {};
+            user.repositories.nodes.forEach(repo => {
+                repo.languages.edges.forEach(edge => {
+                    const name = edge.node.name;
+                    languageMap[name] = (languageMap[name] || 0) + edge.size;
+                });
+            });
+
+            const topLanguages = Object.entries(languageMap)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([name, size]) => ({ name, size }));
+
+            // Calculate Grade/Rank (S, A, B, C)
+            // Logic: based on commits, stars, followers, and PRs
+            const commits = user.contributionsCollection.totalCommitContributions;
+            const prs = user.pullRequests.totalCount;
+            const reviews = user.contributionsCollection.totalPullRequestReviewContributions;
+            const issuesSolved = user.issues.totalCount;
+            const followers = user.followers.totalCount;
+
+            const score = (commits * 0.5) + (prs * 2) + (reviews * 1.5) + (issuesSolved * 1) + (totalStars * 5) + (followers * 2);
+
+            let grade = 'C';
+            if (score > 1000) grade = 'S+';
+            else if (score > 500) grade = 'S';
+            else if (score > 200) grade = 'A';
+            else if (score > 100) grade = 'B';
+
+            return {
+                profile: {
+                    name: user.name,
+                    username: user.login,
+                    avatarUrl: user.avatarUrl,
+                    bio: user.bio,
+                    createdAt: user.createdAt,
+                    followers: user.followers.totalCount,
+                    following: user.following.totalCount,
+                },
+                stats: {
+                    totalRepos: user.repositories.totalCount,
+                    publicRepos,
+                    privateRepos,
+                    sourceRepos,
+                    totalStars,
+                    totalForks,
+                    totalCommits: commits,
+                    totalPRs: prs,
+                    totalReviews: reviews,
+                    totalIssuesSolved: issuesSolved,
+                    totalStarred: user.starredRepositories.totalCount,
+                    totalWatching: user.watching.totalCount,
+                    totalContributions: user.contributionsCollection.contributionCalendar.totalContributions,
+                },
+                rank: {
+                    score,
+                    grade,
+                    level: Math.floor(Math.sqrt(score / 10)) + 1,
+                },
+                languages: topLanguages,
+                badges: this.calculateBadges(user, score),
+            };
+        } catch (error) {
+            console.error('Error fetching GitHub insights:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Calculate badges based on user milestones
+     */
+    calculateBadges(user, score) {
+        const badges = [];
+        const stats = user.contributionsCollection;
+
+        if (stats.totalCommitContributions > 100) badges.push({ id: 'century_committer', name: 'Century Committer', icon: '🏆' });
+        if (user.pullRequests.totalCount > 10) badges.push({ id: 'pr_master', name: 'PR Master', icon: '🚢' });
+        if (user.followers.totalCount > 50) badges.push({ id: 'community_leader', name: 'Community Leader', icon: '🌟' });
+        if (score > 500) badges.push({ id: 'octo_ninja', name: 'Octo Ninja', icon: '🥷' });
+
+        return badges;
+    }
+
+    /**
      * Get recent commits across user's repos (falls back to GraphQL if REST returns empty)
      */
     async getRecentCommits(username, days = 7) {
@@ -636,7 +831,8 @@ class GitHubService {
                 readme,
                 languagesData,
                 keyFiles,
-                commitStats
+                commitStats,
+                trueCommitCount
             ] = await Promise.all([
                 this.octokit.rest.repos.get({ owner, repo }).then(r => r.data),
                 this.getAllCommitsForRepo(owner, repo, 100),
@@ -646,7 +842,8 @@ class GitHubService {
                 this.getReadme(owner, repo),
                 this.octokit.rest.repos.listLanguages({ owner, repo }).then(r => r.data),
                 this.getKeyFileContents(owner, repo),
-                this.getCommitStats(owner, repo, 30)
+                this.getCommitStats(owner, repo, 30),
+                this.getTrueCommitCount(owner, repo)
             ]);
 
             // Process languages
@@ -662,7 +859,10 @@ class GitHubService {
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const recentCommits = commits.filter(c => new Date(c.date) > oneWeekAgo);
 
-            console.log(`✅ Fetched: ${commits.length} commits, ${pullRequests.length} PRs, ${issues.length} issues, ${Object.keys(keyFiles).length} key files`);
+            // Use true commit count if available, otherwise fall back to fetched count
+            const actualTotalCommits = trueCommitCount || commits.length;
+
+            console.log(`✅ Fetched: ${actualTotalCommits} total commits (${commits.length} details), ${pullRequests.length} PRs, ${issues.length} issues, ${Object.keys(keyFiles).length} key files`);
 
             return {
                 // Basic info
@@ -687,8 +887,8 @@ class GitHubService {
                 languages,
                 primaryLanguage: repoData.language,
 
-                // Activity data
-                totalCommits: commits.length,
+                // Activity data - USE ACCURATE COUNT
+                totalCommits: actualTotalCommits,
                 recentCommitsThisWeek: recentCommits.length,
                 commits: commits.slice(0, 50), // Last 50 for AI context
 
