@@ -83,11 +83,37 @@ const getCommits = async (req, res, next) => {
             });
         }
 
-        console.log(`🔍 Fetching GitHub data for user: ${user.githubUsername} (userId: ${userId})`);
-        console.log(`🔑 Using ${user.githubAccessToken ? 'user OAuth token' : 'server PAT'}`);
+        // Get FRESH OAuth token from Clerk for accurate contribution data
+        let githubAccessToken = user.githubAccessToken || null;
 
-        // Use user's OAuth token if available for better rate limits
-        const githubService = new GitHubService(user.githubAccessToken || null);
+        try {
+            const { clerkClient } = require('@clerk/clerk-sdk-node');
+            const oauthTokens = await clerkClient.users.getUserOauthAccessToken(
+                userId,
+                'oauth_github'
+            );
+
+            if (oauthTokens?.data?.[0]?.token) {
+                githubAccessToken = oauthTokens.data[0].token;
+                console.log('🔑 Using FRESH OAuth token from Clerk for contributions');
+
+                // Update the cached token in Firestore for future use
+                await collections.users().doc(userId).update({
+                    githubAccessToken: githubAccessToken,
+                    updatedAt: new Date().toISOString()
+                });
+            } else {
+                console.log('⚠️ No fresh OAuth token available, using cached or PAT');
+            }
+        } catch (tokenErr) {
+            console.warn('⚠️ Could not get fresh OAuth token from Clerk:', tokenErr.message);
+        }
+
+        console.log(`🔍 Fetching GitHub data for user: ${user.githubUsername} (userId: ${userId})`);
+        console.log(`🔑 Using ${githubAccessToken ? 'user OAuth token' : 'server PAT'}`);
+
+        // Use fresh OAuth token if available for accurate contributions (including private)
+        const githubService = new GitHubService(githubAccessToken);
 
         // Fetch 14 days of data to calculate WoW growth
         const result = await githubService.getRecentCommits(user.githubUsername, 14);

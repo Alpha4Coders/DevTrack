@@ -57,7 +57,47 @@ class GitHubService {
     }
 
     /**
-     * Get ALL commits for a specific repo (paginated)
+     * Get the TRUE total commit count for a repository
+     * Uses the Contributors Stats API which gives accurate totals
+     */
+    async getTrueCommitCount(owner, repo) {
+        try {
+            // Method 1: Try to get from contributors stats (most accurate)
+            const { data: contributors } = await this.octokit.rest.repos.listContributors({
+                owner,
+                repo,
+                per_page: 100,
+                anon: 'true' // Include anonymous contributors
+            });
+
+            if (contributors && contributors.length > 0) {
+                const totalCommits = contributors.reduce((sum, c) => sum + (c.contributions || 0), 0);
+                console.log(`📊 True commit count for ${owner}/${repo}: ${totalCommits} (from ${contributors.length} contributors)`);
+                return totalCommits;
+            }
+
+            // Method 2: Fallback - use participation stats
+            const { data: participation } = await this.octokit.rest.repos.getParticipationStats({
+                owner,
+                repo
+            });
+
+            if (participation && participation.all) {
+                const totalCommits = participation.all.reduce((a, b) => a + b, 0);
+                console.log(`📊 True commit count (participation): ${totalCommits}`);
+                return totalCommits;
+            }
+
+            return 0;
+        } catch (error) {
+            console.error('Error getting true commit count:', error.message);
+            // Fallback: estimate from paginated fetch
+            return null;
+        }
+    }
+
+    /**
+     * Get commits for a specific repo (paginated, for details)
      */
     async getAllCommitsForRepo(owner, repo, maxCommits = 100) {
         try {
@@ -636,7 +676,8 @@ class GitHubService {
                 readme,
                 languagesData,
                 keyFiles,
-                commitStats
+                commitStats,
+                trueCommitCount
             ] = await Promise.all([
                 this.octokit.rest.repos.get({ owner, repo }).then(r => r.data),
                 this.getAllCommitsForRepo(owner, repo, 100),
@@ -646,7 +687,8 @@ class GitHubService {
                 this.getReadme(owner, repo),
                 this.octokit.rest.repos.listLanguages({ owner, repo }).then(r => r.data),
                 this.getKeyFileContents(owner, repo),
-                this.getCommitStats(owner, repo, 30)
+                this.getCommitStats(owner, repo, 30),
+                this.getTrueCommitCount(owner, repo)
             ]);
 
             // Process languages
@@ -662,7 +704,10 @@ class GitHubService {
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const recentCommits = commits.filter(c => new Date(c.date) > oneWeekAgo);
 
-            console.log(`✅ Fetched: ${commits.length} commits, ${pullRequests.length} PRs, ${issues.length} issues, ${Object.keys(keyFiles).length} key files`);
+            // Use true commit count if available, otherwise fall back to fetched count
+            const actualTotalCommits = trueCommitCount || commits.length;
+
+            console.log(`✅ Fetched: ${actualTotalCommits} total commits (${commits.length} details), ${pullRequests.length} PRs, ${issues.length} issues, ${Object.keys(keyFiles).length} key files`);
 
             return {
                 // Basic info
@@ -687,8 +732,8 @@ class GitHubService {
                 languages,
                 primaryLanguage: repoData.language,
 
-                // Activity data
-                totalCommits: commits.length,
+                // Activity data - USE ACCURATE COUNT
+                totalCommits: actualTotalCommits,
                 recentCommitsThisWeek: recentCommits.length,
                 commits: commits.slice(0, 50), // Last 50 for AI context
 
