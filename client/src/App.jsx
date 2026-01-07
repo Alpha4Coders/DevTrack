@@ -12,7 +12,7 @@ import SystemInfo from './pages/SystemInfo'
 import Onboarding from './pages/Onboarding'
 import MobileAuth from './pages/MobileAuth'
 import GitHubInsights from './pages/GitHubInsights'
-import { preferencesApi, authApi } from './services/api'
+import { preferencesApi } from './services/api'
 import useHeartbeat from './hooks/useHeartbeat'
 import Lenis from 'lenis'
 import { CacheProvider } from './context/CacheContext'
@@ -39,9 +39,6 @@ function OnboardingRedirect({ children }) {
             }
 
             try {
-                // Sync user with backend
-                await authApi.sync().catch(err => console.error('Sync failed:', err));
-
                 const response = await preferencesApi.get()
                 const onboardingCompleted = response.data?.data?.onboardingCompleted
 

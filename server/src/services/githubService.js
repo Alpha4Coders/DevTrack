@@ -11,11 +11,10 @@ class GitHubService {
         const authToken = token || process.env.GITHUB_PAT;
 
         if (!authToken) {
-            console.warn('⚠️ No GitHub token provided. initialized unauthenticated Octokit. Some features may be limited or rate-limited.');
-            this.octokit = new Octokit();
-        } else {
-            this.octokit = new Octokit({ auth: authToken });
+            throw new Error('GitHub token not provided');
         }
+
+        this.octokit = new Octokit({ auth: authToken });
     }
 
     /**
