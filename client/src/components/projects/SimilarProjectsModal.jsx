@@ -121,7 +121,7 @@ export default function SimilarProjectsModal({ isOpen, onClose, userLanguages = 
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                className="fixed inset-0 z-[12000] flex items-center justify-center p-4"
                 onClick={onClose}
             >
                 {/* Backdrop */}
@@ -139,7 +139,7 @@ export default function SimilarProjectsModal({ isOpen, onClose, userLanguages = 
                         mass: 0.8
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="relative w-full max-w-4xl max-h-[85vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                    className="relative w-[95%] md:w-[85%] max-w-4xl max-h-[85vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">

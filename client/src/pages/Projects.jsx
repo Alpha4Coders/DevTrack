@@ -1438,16 +1438,16 @@ export default function Projects() {
               <Button
                 onClick={() => setShowSimilarModal(true)}
                 variant="ghost"
-                className="flex items-center gap-2 border border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/10"
+                className="flex items-center gap-2 border border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
               >
-                <Search className="w-4 h-4 text-purple-400" />
+                <Search className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-purple-400" />
                 Discover Similar
               </Button>
               <Button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 lg:w-5 lg:h-5" />
                 New Project
               </Button>
             </div>

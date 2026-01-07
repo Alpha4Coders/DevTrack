@@ -458,8 +458,8 @@ export default function Learning() {
                         <h1 className="text-3xl font-bold text-white mb-1">Learning Tracker</h1>
                         <p className="text-slate-400 text-sm">Track your courses, tutorials, and skills</p>
                     </div>
-                    <Button onClick={openAddModal} className="flex items-center gap-2">
-                        <Plus className="w-5 h-5" />
+                    <Button onClick={openAddModal} className="flex items-center gap-2 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4">
+                        <Plus className="w-4 h-4 lg:w-5 lg:h-5" />
                         Add Entry
                     </Button>
                 </div>
