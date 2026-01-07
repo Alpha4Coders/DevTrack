@@ -465,17 +465,22 @@ export default function Learning() {
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-shrink-0">
-                    <>
+                <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<BookOpen size={24} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
+                    </div>
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<Flame size={24} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
+                    </div>
+                    <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
                         <StatCard icon={<Calendar size={24} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
-                    </>
+                    </div>
                 </div>
 
                 {/* Scrollable Content Area */}
                 <div 
                     ref={learningContainerRef}
+                    id="learning-scroll-container"
                     className="flex-1 overflow-y-auto min-h-0 pr-6 -mr-6 relative"
                 >
                     <div ref={learningContentRef} className="pb-4">

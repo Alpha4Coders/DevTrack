@@ -172,8 +172,8 @@ function MobileNavbar({ onOpenSettings }) {
     // Listen for scroll events (window + dashboard container)
     useEffect(() => {
         const handleScroll = (e) => {
-            // Only apply on mobile dashboard or system-info
-            const isAnimatedPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/system-info')
+            // Only apply on mobile dashboard, system-info, or learning
+            const isAnimatedPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/system-info') || location.pathname.startsWith('/learning')
             
             if (!isAnimatedPage || window.innerWidth >= 768) {
                 setIsHidden(false)
@@ -199,12 +199,25 @@ function MobileNavbar({ onOpenSettings }) {
         // Attach to window and specific container
         window.addEventListener('scroll', handleScroll, { passive: true })
         
-        // Try to find dashboard container and attach (poll briefly if needed, but simple query works if mounted)
-        const container = document.getElementById('dashboard-scroll-container')
-        if (container) container.addEventListener('scroll', handleScroll, { passive: true })
+        // Polling to attach to container once mounted
+        const checkForContainer = setInterval(() => {
+            const container = document.getElementById('dashboard-scroll-container') || document.getElementById('learning-scroll-container')
+            if (container) {
+                container.addEventListener('scroll', handleScroll, { passive: true })
+                clearInterval(checkForContainer)
+                // log successful attachment for debugging if needed
+                // console.log("Attached scroll listener to:", container.id)
+            }
+        }, 100)
+
+        // Stop polling after 2 seconds to avoid infinite loop
+        const timeout = setTimeout(() => clearInterval(checkForContainer), 2000)
 
         return () => {
             window.removeEventListener('scroll', handleScroll)
+            clearInterval(checkForContainer)
+            clearTimeout(timeout)
+            const container = document.getElementById('dashboard-scroll-container') || document.getElementById('learning-scroll-container')
             if (container) container.removeEventListener('scroll', handleScroll)
         }
     }, [location.pathname])
