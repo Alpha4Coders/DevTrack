@@ -467,21 +467,60 @@ const getInsights = async (req, res, next) => {
             throw new APIError('User not found', 404);
         }
 
-        const user = userDoc.data();
-        if (!user.githubUsername) {
-            throw new APIError('GitHub account not connected', 400);
-        }
+        let user = userDoc.data();
+        let githubAccessToken = user.githubAccessToken || null;
 
         // Get fresh OAuth token from Clerk for full access
-        let githubAccessToken = user.githubAccessToken || null;
+        const { clerkClient } = require('@clerk/clerk-sdk-node');
         try {
-            const { clerkClient } = require('@clerk/clerk-sdk-node');
             const oauthTokens = await clerkClient.users.getUserOauthAccessToken(userId, 'oauth_github');
             if (oauthTokens?.data?.[0]?.token) {
                 githubAccessToken = oauthTokens.data[0].token;
             }
         } catch (tokenErr) {
             console.warn('Could not get fresh OAuth token:', tokenErr.message);
+        }
+
+        // Auto-sync GitHub username if missing
+        if (!user.githubUsername) {
+            console.log('🔄 GitHub username missing, attempting auto-sync...');
+            try {
+                const clerkUser = await clerkClient.users.getUser(userId);
+                let githubUsername = null;
+
+                // Check externalAccounts
+                if (clerkUser.externalAccounts) {
+                    const ghAccount = clerkUser.externalAccounts.find(
+                        acc => acc.provider === 'github' || acc.provider === 'oauth_github'
+                    );
+                    if (ghAccount) {
+                        githubUsername = ghAccount.username;
+                    }
+                }
+
+                // Fallback: try GitHub API with token
+                if (!githubUsername && githubAccessToken) {
+                    const { Octokit } = require('octokit');
+                    const octokit = new Octokit({ auth: githubAccessToken });
+                    const { data: ghUser } = await octokit.rest.users.getAuthenticated();
+                    githubUsername = ghUser.login;
+                }
+
+                if (githubUsername) {
+                    await collections.users().doc(userId).update({
+                        githubUsername,
+                        githubAccessToken,
+                        updatedAt: new Date().toISOString()
+                    });
+                    user.githubUsername = githubUsername;
+                    console.log('✅ Auto-synced GitHub username:', githubUsername);
+                } else {
+                    throw new APIError('GitHub account not connected. Please sign out and sign in with GitHub.', 400);
+                }
+            } catch (syncErr) {
+                console.error('Auto-sync failed:', syncErr.message);
+                throw new APIError('GitHub account not connected. Please sign out and sign in with GitHub.', 400);
+            }
         }
 
         const githubService = new GitHubService(githubAccessToken);
