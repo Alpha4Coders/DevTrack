@@ -119,15 +119,7 @@ export default function GitHubInsights() {
 
     return (
         <div className="relative min-h-screen bg-slate-950 overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(120,50,255,0.1),transparent_50%)]"></div>
-                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full"></div>
-                <div className="absolute top-1/4 -left-20 w-[300px] h-[300px] bg-blue-600/10 blur-[100px] rounded-full"></div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-            </div>
-
-            <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-6 pb-32">
+            <div className="relative z-10 w-full p-2 md:p-4 space-y-4 pb-32">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row items-center gap-6 mb-4">
                     <motion.div
