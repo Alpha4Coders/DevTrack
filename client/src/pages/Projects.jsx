@@ -522,6 +522,7 @@ function ProjectForm({
   onCancel,
   isEdit,
   analyzing,
+  error,
 }) {
   const [hasRepo, setHasRepo] = useState(
     isEdit ? (formData.repositoryUrl ? "yes" : "no") : null
@@ -902,6 +903,20 @@ function ProjectForm({
         />
       </div>
 
+      {/* Error Message - Displayed prominently above buttons */}
+      {error && (
+        <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-2">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-red-400 text-lg">❌</span>
+            <span className="text-red-400 font-semibold">Could not create project</span>
+          </div>
+          <p className="text-red-300 text-sm pl-7">
+            <span className="text-red-400 font-medium">Reason: </span>
+            {error}
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-4 pt-2">
         <Button
           type="button"
@@ -1062,6 +1077,7 @@ export default function Projects() {
 
   const [expandedProjectId, setExpandedProjectId] = useState(null);
   const [error, setError] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -1080,6 +1096,11 @@ export default function Projects() {
     technologies: "",
   };
   const [formData, setFormData] = useState(defaultFormData);
+
+  // Clear error when user types
+  useEffect(() => {
+    if (formError) setFormError(null);
+  }, [formData]);
 
   useEffect(() => {
     fetchData();
@@ -1198,11 +1219,24 @@ export default function Projects() {
       let projectData = { ...formData, technologies: techArray };
 
       // Close modal immediately for fast UX
+      // setShowModal(false); // DON'T CLOSE IMMEDIATELY if we want to show errors, but since we want optimistic UI...
+      // Actually, for validation errors we MUST wait for response.
+      // But preserving the "Fast UX" might be tricky if we want to show server errors inline.
+      // The previous code closed modal immediately. This means users never saw server errors in the modal!
+      // They only saw "Failed to create project" alert if it failed.
+      // To show inline errors, we must NOT close modal optimisticly for creation if we want to validate.
+      // However, "optimistic UI" usually implies assuming success.
+      // If we want "proper messages", we should probably wait for at least initial validation response.
+      // Let's change this to wait for creation.
+
+      // Create project
+      const createResponse = await projectsApi.create(projectData);
+      
+      // If we get here, it succeeded
       setShowModal(false);
       setFormData(defaultFormData);
+      setFormError(null);
 
-      // Create project (server returns immediately, runs analysis in background)
-      const createResponse = await projectsApi.create(projectData);
       const newProject = createResponse.data?.data;
 
       if (newProject) {
@@ -1237,7 +1271,8 @@ export default function Projects() {
       }
     } catch (err) {
       console.error("Error creating project:", err);
-      alert("Failed to create project");
+      // Backend returns error in 'error' field, not 'message'
+      setFormError(err.response?.data?.error || err.message || "Failed to create project");
     }
   };
 
@@ -1646,6 +1681,7 @@ export default function Projects() {
             onCancel={() => setShowModal(false)}
             isEdit={false}
             analyzing={analyzing}
+            error={formError}
           />
         </Modal>
 
@@ -1668,6 +1704,7 @@ export default function Projects() {
             }}
             isEdit={true}
             analyzing={analyzing}
+            error={formError}
           />
         </Modal>
         {/* Background Processing Indicator */}
