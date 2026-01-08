@@ -602,6 +602,32 @@ const getSimilarProjects = async (req, res, next) => {
     }
 };
 
+/**
+ * Download weekly PDF report
+ * GET /api/github/report
+ */
+const downloadReport = async (req, res, next) => {
+    try {
+        const { userId } = req.auth;
+
+        console.log(`📄 Generating PDF report for user ${userId}...`);
+
+        const reportService = require('../services/reportService');
+        const pdfBuffer = await reportService.generatePDFReport(userId);
+
+        // Set headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=devtrack-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        console.log(`✅ PDF report generated, sending ${pdfBuffer.length} bytes`);
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error('❌ Report generation error:', error.message);
+        next(error);
+    }
+};
+
 module.exports = {
     getActivity,
     getCommits,
@@ -613,5 +639,6 @@ module.exports = {
     createRepo,
     getInsights,
     getSimilarProjects,
+    downloadReport,
 };
 

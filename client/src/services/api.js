@@ -119,6 +119,7 @@ export const githubApi = {
                 limit
             }
         }),
+    downloadReport: () => api.get('/github/report', { responseType: 'arraybuffer' }),
 };
 
 export const geminiApi = {
