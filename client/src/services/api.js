@@ -177,8 +177,21 @@ export const savedIdeasApi = {
 
 export const readmeApi = {
     generate: (projectId) => api.post(`/readme/generate/${projectId}`),
-    commit: (projectId, content, commitMessage) => 
+    commit: (projectId, content, commitMessage) =>
         api.post(`/readme/commit/${projectId}`, { content, commitMessage }),
+};
+
+export const showcaseApi = {
+    getAll: (excludeOwn = false, search = '', technology = '') =>
+        api.get('/showcase', { params: { excludeOwn, search, technology } }),
+    getMine: () => api.get('/showcase/mine'),
+    getTrending: () => api.get('/showcase/trending'),
+    checkStatus: (projectId) => api.get(`/showcase/check/${projectId}`),
+    create: (data) => api.post('/showcase', data),
+    delete: (id) => api.delete(`/showcase/${id}`),
+    toggleStar: (id) => api.post(`/showcase/${id}/star`),
+    addComment: (id, content, authorName, authorAvatar) =>
+        api.post(`/showcase/${id}/comments`, { content, authorName, authorAvatar }),
 };
 
 export default api;
