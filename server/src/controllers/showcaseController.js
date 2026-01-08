@@ -438,6 +438,54 @@ const getTrending = async (req, res, next) => {
     }
 };
 
+/**
+ * Delete a comment from a showcase
+ * DELETE /api/showcase/:id/comments/:commentId
+ */
+const deleteComment = async (req, res, next) => {
+    try {
+        const userId = req.auth.userId;
+        const { id, commentId } = req.params;
+
+        const docRef = collections.showcases().doc(id);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            throw new APIError('Showcase not found', 404);
+        }
+
+        const showcaseData = doc.data();
+        const comments = showcaseData.comments || [];
+
+        // Find the comment
+        const commentToDelete = comments.find(c => c.id === commentId);
+
+        if (!commentToDelete) {
+            throw new APIError('Comment not found', 404);
+        }
+
+        // Check if user is the comment author or showcase owner
+        if (commentToDelete.userId !== userId && showcaseData.userId !== userId) {
+            throw new APIError('Not authorized to delete this comment', 403);
+        }
+
+        // Remove the comment from the array
+        const updatedComments = comments.filter(c => c.id !== commentId);
+
+        await docRef.update({
+            comments: updatedComments,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        res.json({
+            success: true,
+            message: 'Comment deleted',
+        });
+    } catch (error) {
+        next(error instanceof APIError ? error : new APIError(error.message, 500));
+    }
+};
+
 module.exports = {
     getShowcases,
     getMyShowcases,
@@ -446,5 +494,6 @@ module.exports = {
     deleteShowcase,
     toggleStar,
     addComment,
+    deleteComment,
     getTrending,
 };

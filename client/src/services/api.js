@@ -192,6 +192,8 @@ export const showcaseApi = {
     toggleStar: (id) => api.post(`/showcase/${id}/star`),
     addComment: (id, content, authorName, authorAvatar) =>
         api.post(`/showcase/${id}/comments`, { content, authorName, authorAvatar }),
+    deleteComment: (showcaseId, commentId) =>
+        api.delete(`/showcase/${showcaseId}/comments/${commentId}`),
 };
 
 export default api;

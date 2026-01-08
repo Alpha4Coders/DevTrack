@@ -25,6 +25,7 @@ import {
     Upload,
     Eye,
     Clock,
+    Trash2,
 } from "lucide-react";
 import { projectsApi, showcaseApi } from "../services/api";
 import Button from "../components/ui/Button";
@@ -128,10 +129,11 @@ function Modal({ isOpen, onClose, title, children, size = "lg" }) {
 }
 
 // Showcase Card Component
-function ShowcaseCard({ showcase, onStar, onComment, currentUserId }) {
+function ShowcaseCard({ showcase, onStar, onComment, onDeleteComment, currentUserId }) {
     const [showComments, setShowComments] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [submittingComment, setSubmittingComment] = useState(false);
+    const [deletingCommentId, setDeletingCommentId] = useState(null);
     const { user } = useUser();
 
     const handleSubmitComment = async () => {
@@ -299,7 +301,7 @@ function ShowcaseCard({ showcase, onStar, onComment, currentUserId }) {
                                     {showcase.comments?.length > 0 ? (
                                         <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar">
                                             {showcase.comments.map((comment, idx) => (
-                                                <div key={idx} className="flex gap-2 p-2 rounded-lg bg-white/5">
+                                                <div key={idx} className="flex gap-2 p-2 rounded-lg bg-white/5 group">
                                                     {comment.authorAvatar ? (
                                                         <img
                                                             src={comment.authorAvatar}
@@ -311,12 +313,31 @@ function ShowcaseCard({ showcase, onStar, onComment, currentUserId }) {
                                                             <Users size={10} className="text-purple-400" />
                                                         </div>
                                                     )}
-                                                    <div>
+                                                    <div className="flex-1 min-w-0">
                                                         <p className="text-xs text-slate-400 font-medium">
                                                             {comment.authorName}
                                                         </p>
                                                         <p className="text-sm text-slate-300">{comment.content}</p>
                                                     </div>
+                                                    {/* Delete button - only show for comment author or showcase owner */}
+                                                    {(comment.userId === currentUserId || showcase.isOwner) && (
+                                                        <button
+                                                            onClick={async () => {
+                                                                setDeletingCommentId(comment.id);
+                                                                await onDeleteComment(showcase.id, comment.id);
+                                                                setDeletingCommentId(null);
+                                                            }}
+                                                            disabled={deletingCommentId === comment.id}
+                                                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-all flex-shrink-0"
+                                                            title="Delete comment"
+                                                        >
+                                                            {deletingCommentId === comment.id ? (
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                            ) : (
+                                                                <Trash2 size={12} />
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -801,6 +822,29 @@ export default function Showcase() {
         }
     };
 
+    // Handle delete comment
+    const handleDeleteComment = async (showcaseId, commentId) => {
+        try {
+            await showcaseApi.deleteComment(showcaseId, commentId);
+            // Update local state - remove comment from all lists
+            const updateShowcaseComments = (showcaseList) =>
+                showcaseList.map((s) =>
+                    s.id === showcaseId
+                        ? {
+                            ...s,
+                            comments: (s.comments || []).filter((c) => c.id !== commentId),
+                            commentCount: Math.max(0, (s.commentCount || 0) - 1),
+                        }
+                        : s
+                );
+            setShowcases(updateShowcaseComments);
+            setMyShowcases(updateShowcaseComments);
+            setTrending(updateShowcaseComments);
+        } catch (error) {
+            console.error("Failed to delete comment:", error);
+        }
+    };
+
     // Handle submit showcase
     const handleSubmitShowcase = async (data) => {
         const response = await showcaseApi.create(data);
@@ -919,6 +963,7 @@ export default function Showcase() {
                                                     showcase={showcase}
                                                     onStar={handleStar}
                                                     onComment={handleComment}
+                                                    onDeleteComment={handleDeleteComment}
                                                     currentUserId={user?.id}
                                                 />
                                             ))}
@@ -948,6 +993,7 @@ export default function Showcase() {
                                                     showcase={showcase}
                                                     onStar={handleStar}
                                                     onComment={handleComment}
+                                                    onDeleteComment={handleDeleteComment}
                                                     currentUserId={user?.id}
                                                 />
                                             ))}
@@ -1029,7 +1075,8 @@ export default function Showcase() {
                                                 <ShowcaseCard
                                                     showcase={{ ...showcase, isOwner: true, hasStarred: false }}
                                                     onStar={() => { }}
-                                                    onComment={() => { }}
+                                                    onComment={handleComment}
+                                                    onDeleteComment={handleDeleteComment}
                                                     currentUserId={user?.id}
                                                 />
                                                 <button

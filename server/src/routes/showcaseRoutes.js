@@ -14,6 +14,7 @@ const {
     deleteShowcase,
     toggleStar,
     addComment,
+    deleteComment,
     getTrending,
 } = require('../controllers/showcaseController');
 
@@ -43,5 +44,8 @@ router.post('/:id/star', toggleStar);
 
 // POST /api/showcase/:id/comments - Add a comment
 router.post('/:id/comments', addComment);
+
+// DELETE /api/showcase/:id/comments/:commentId - Delete a comment
+router.delete('/:id/comments/:commentId', deleteComment);
 
 module.exports = router;
