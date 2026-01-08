@@ -3,7 +3,7 @@ import { UserButton } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 import NotificationSettings from '../settings/NotificationSettings'
-import { BookOpen, Info } from 'lucide-react'
+import { BookOpen, Info, Trophy } from 'lucide-react'
 
 // SVG Icon Components
 const DashboardIcon = ({ className = "w-5 h-5" }) => (
@@ -46,6 +46,7 @@ const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: DashboardIcon },
     { name: 'Learning', path: '/learning', icon: BookOpen },
     { name: 'Projects', path: '/projects', icon: WindowsTerminalIcon },
+    { name: 'Showcase', path: '/showcase', icon: Trophy },
     { name: 'AI Chat', path: '/chat', icon: GeminiIcon },
     { name: 'GitHub Insights', path: '/github-insights', icon: GithubOutlineIcon },
 ]
@@ -180,7 +181,7 @@ function MobileNavbar({ onOpenSettings }) {
     useEffect(() => {
         const handleScroll = (e) => {
             // Only apply on mobile dashboard, system-info, learning, or projects
-            const isAnimatedPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/system-info') || location.pathname.startsWith('/learning') || location.pathname.startsWith('/projects') || location.pathname.startsWith('/github-insights') || location.pathname.startsWith('/chat')
+            const isAnimatedPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/system-info') || location.pathname.startsWith('/learning') || location.pathname.startsWith('/projects') || location.pathname.startsWith('/github-insights') || location.pathname.startsWith('/chat') || location.pathname.startsWith('/showcase')
 
             if (!isAnimatedPage || window.innerWidth >= 768) {
                 setIsHidden(false)
@@ -242,6 +243,7 @@ function MobileNavbar({ onOpenSettings }) {
             const projects = document.getElementById('projects-scroll-container')
             const githubInsights = document.getElementById('github-insights-scroll-container')
             const chat = document.getElementById('chat-scroll-container')
+            const showcase = document.getElementById('showcase-scroll-container')
 
             // Prioritize based on current path to avoid ambiguity, though IDs are unique per page
             let targetDiv = null
@@ -250,6 +252,7 @@ function MobileNavbar({ onOpenSettings }) {
             else if (location.pathname.startsWith('/projects')) targetDiv = projects
             else if (location.pathname.startsWith('/github-insights')) targetDiv = githubInsights
             else if (location.pathname.startsWith('/chat')) targetDiv = chat
+            else if (location.pathname.startsWith('/showcase')) targetDiv = showcase
 
             // If we found a valid container
             if (targetDiv) {
@@ -380,7 +383,8 @@ export default function Navbar() {
             document.getElementById('dashboard-scroll-container'),
             document.getElementById('learning-scroll-container'),
             document.getElementById('projects-scroll-container'),
-            document.getElementById('github-insights-scroll-container')
+            document.getElementById('github-insights-scroll-container'),
+            document.getElementById('showcase-scroll-container')
         ]
 
         if (settingsOpen) {
@@ -395,7 +399,7 @@ export default function Navbar() {
 
         // Cleanup function
         return () => {
-             getContainers().forEach(el => {
+            getContainers().forEach(el => {
                 if (el) el.style.overflow = ''
             })
         }

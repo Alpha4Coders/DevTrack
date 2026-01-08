@@ -119,12 +119,14 @@ export const githubApi = {
                 limit
             }
         }),
+    downloadReport: () => api.get('/github/report', { responseType: 'arraybuffer' }),
 };
 
 export const geminiApi = {
     chat: (message, context) => api.post('/gemini/chat', { message, context }),
     analyzeProject: (repoInfo) => api.post('/gemini/analyze-project', { repoInfo }),
     getHistory: () => api.get('/gemini/history'),
+    deleteHistory: () => api.delete('/gemini/history'),
 };
 
 export const authApi = {
@@ -146,6 +148,13 @@ export const notificationsApi = {
     sendTest: () => api.post('/notifications/test'),
 };
 
+export const bookmarksApi = {
+    getAll: () => api.get('/bookmarks'),
+    add: (repoData) => api.post('/bookmarks', repoData),
+    checkStatus: (repoIds) => api.post('/bookmarks/check', { repoIds }),
+    remove: (repoId) => api.delete(`/bookmarks/${repoId}`),
+};
+
 export const tasksApi = {
     getAll: (params) => api.get('/tasks', { params }),
     getByRange: (start, end) => api.get('/tasks/range', { params: { start, end } }),
@@ -155,4 +164,38 @@ export const tasksApi = {
     toggle: (id) => api.patch(`/tasks/${id}/toggle`),
 };
 
+export const projectIdeasApi = {
+    generate: (options) => api.post('/project-ideas/generate', options),
+};
+
+export const savedIdeasApi = {
+    getAll: () => api.get('/saved-ideas'),
+    save: (ideaData) => api.post('/saved-ideas', ideaData),
+    checkStatus: (titles) => api.post('/saved-ideas/check', { titles }),
+    remove: (ideaId) => api.delete(`/saved-ideas/${ideaId}`),
+};
+
+export const readmeApi = {
+    generate: (projectId) => api.post(`/readme/generate/${projectId}`),
+    commit: (projectId, content, commitMessage) =>
+        api.post(`/readme/commit/${projectId}`, { content, commitMessage }),
+};
+
+export const showcaseApi = {
+    getAll: (excludeOwn = false, search = '', technology = '') =>
+        api.get('/showcase', { params: { excludeOwn, search, technology } }),
+    getMine: () => api.get('/showcase/mine'),
+    getTrending: () => api.get('/showcase/trending'),
+    checkStatus: (projectId) => api.get(`/showcase/check/${projectId}`),
+    create: (data) => api.post('/showcase', data),
+    delete: (id) => api.delete(`/showcase/${id}`),
+    toggleStar: (id) => api.post(`/showcase/${id}/star`),
+    addComment: (id, content, authorName, authorAvatar) =>
+        api.post(`/showcase/${id}/comments`, { content, authorName, authorAvatar }),
+    deleteComment: (showcaseId, commentId) =>
+        api.delete(`/showcase/${showcaseId}/comments/${commentId}`),
+};
+
 export default api;
+
+

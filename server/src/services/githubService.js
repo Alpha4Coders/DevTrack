@@ -995,14 +995,20 @@ class GitHubService {
                 q: searchQuery,
                 sort: 'stars',
                 order: 'desc',
-                per_page: perPage,
+                per_page: 50, // Fetch more to shuffle
             });
 
             console.log(`✅ Found ${data.total_count} repos, returning top ${data.items.length}`);
 
+            // Shuffle the results to make it dynamic
+            const shuffled = data.items.sort(() => 0.5 - Math.random());
+            
+            // Return only the requested number of items
+            const selectedRepos = shuffled.slice(0, perPage);
+
             return {
                 totalCount: data.total_count,
-                repos: data.items.map(repo => ({
+                repos: selectedRepos.map(repo => ({
                     id: repo.id,
                     name: repo.name,
                     fullName: repo.full_name,
@@ -1021,6 +1027,98 @@ class GitHubService {
             };
         } catch (error) {
             console.error('Error searching similar projects:', error.message);
+            throw error;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FILE OPERATIONS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Create or update a file in a repository
+     * Uses GitHub Contents API: PUT /repos/{owner}/{repo}/contents/{path}
+     * @param {string} owner - Repository owner
+     * @param {string} repo - Repository name
+     * @param {string} path - File path in the repository (e.g., 'README.md')
+     * @param {string} content - File content (will be base64 encoded)
+     * @param {string} message - Commit message
+     * @param {string} branch - Branch name (default: 'main')
+     * @returns {object} - Commit information
+     */
+    async commitFile(owner, repo, path, content, message, branch = 'main') {
+        try {
+            console.log(`📝 Committing ${path} to ${owner}/${repo} on branch ${branch}...`);
+
+            // First, check if file already exists to get its SHA (required for updates)
+            let sha = null;
+            try {
+                const { data: existingFile } = await this.octokit.rest.repos.getContent({
+                    owner,
+                    repo,
+                    path,
+                    ref: branch,
+                });
+                sha = existingFile.sha;
+                console.log(`📄 File exists, will update (SHA: ${sha.substring(0, 7)})`);
+            } catch (error) {
+                if (error.status === 404) {
+                    console.log(`📄 File doesn't exist, will create new`);
+                } else {
+                    throw error;
+                }
+            }
+
+            // Base64 encode the content
+            const contentBase64 = Buffer.from(content, 'utf-8').toString('base64');
+
+            // Create or update the file
+            const requestData = {
+                owner,
+                repo,
+                path,
+                message,
+                content: contentBase64,
+                branch,
+            };
+
+            // Include SHA if updating existing file
+            if (sha) {
+                requestData.sha = sha;
+            }
+
+            const { data: result } = await this.octokit.rest.repos.createOrUpdateFileContents(requestData);
+
+            console.log(`✅ Successfully committed ${path}`);
+            console.log(`   Commit: ${result.commit.sha.substring(0, 7)} - ${result.commit.message}`);
+
+            return {
+                success: true,
+                commit: {
+                    sha: result.commit.sha,
+                    message: result.commit.message,
+                    url: result.commit.html_url,
+                },
+                content: {
+                    path: result.content.path,
+                    sha: result.content.sha,
+                    url: result.content.html_url,
+                },
+            };
+        } catch (error) {
+            console.error(`❌ Error committing file ${path}:`, error.message);
+            
+            // Provide helpful error messages
+            if (error.status === 404) {
+                throw new Error('Repository not found or you do not have access');
+            } else if (error.status === 403) {
+                throw new Error('You do not have permission to push to this repository');
+            } else if (error.status === 409) {
+                throw new Error('Conflict: The file was modified. Please try again.');
+            } else if (error.status === 422) {
+                throw new Error('Invalid request: Branch may not exist or file path is invalid');
+            }
+            
             throw error;
         }
     }

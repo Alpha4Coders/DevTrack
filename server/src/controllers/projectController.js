@@ -100,6 +100,82 @@ const createProject = async (req, res, next) => {
         const { userId } = req.auth;
         const { name, description, projectIdea, status, repositoryUrl, technologies, progress, commits, githubData, aiAnalysis } = req.body;
 
+        const GitHubService = require('../services/githubService');
+
+        // Validation for GitHub Repository
+        if (repositoryUrl) {
+            // 1. Valid URL format
+            const parsed = GitHubService.parseGitHubUrl(repositoryUrl);
+            if (!parsed) {
+                throw new APIError('Invalid GitHub repository URL', 400);
+            }
+
+            // 2. Fetch User for Identity Check
+            const userDoc = await collections.users().doc(userId).get();
+            if (!userDoc.exists) {
+                throw new APIError('User profile not found', 404);
+            }
+            const userData = userDoc.data();
+            const userGithubUsername = userData.githubUsername;
+
+            if (!userGithubUsername) {
+                throw new APIError('Please link your GitHub account in settings first', 400);
+            }
+
+            // 3. Check if user owns or is a contributor to the repo
+            const github = new GitHubService(userData.githubAccessToken);
+            
+            // First check if repo exists and get its info
+            let repoInfo;
+            try {
+                const repoResponse = await github.octokit.rest.repos.get({
+                    owner: parsed.owner,
+                    repo: parsed.repo,
+                });
+                repoInfo = repoResponse.data;
+            } catch (err) {
+                if (err.status === 404) {
+                    throw new APIError('Repository not found on GitHub', 404);
+                }
+                throw new APIError(`Cannot access repository: ${err.message}`, 400);
+            }
+
+            // Check ownership (case-insensitive)
+            const isOwner = parsed.owner.toLowerCase() === userGithubUsername.toLowerCase();
+            
+            // If not owner, check if user is a contributor
+            if (!isOwner) {
+                try {
+                    const contributorsResponse = await github.octokit.rest.repos.listContributors({
+                        owner: parsed.owner,
+                        repo: parsed.repo,
+                        per_page: 100, // Check first 100 contributors
+                    });
+                    
+                    const contributors = contributorsResponse.data || [];
+                    const isContributor = contributors.some(
+                        contributor => contributor.login.toLowerCase() === userGithubUsername.toLowerCase()
+                    );
+                    
+                    if (!isContributor) {
+                        throw new APIError(
+                            `You can only add repositories that you own or contribute to. You are not listed as a contributor to ${parsed.owner}/${parsed.repo}`,
+                            403
+                        );
+                    }
+                } catch (contributorErr) {
+                    // If we can't fetch contributors (e.g., private repo without access), fall back to ownership check
+                    if (contributorErr instanceof APIError) {
+                        throw contributorErr;
+                    }
+                    throw new APIError(
+                        `You can only add repositories that you own or contribute to (${userGithubUsername})`,
+                        403
+                    );
+                }
+            }
+        }
+
         // If githubData is already provided (from client-side analysis), use it directly
         const hasPreAnalyzedData = !!(githubData || aiAnalysis);
 
@@ -142,14 +218,21 @@ const createProject = async (req, res, next) => {
             // Use setImmediate to ensure response is sent first
             setImmediate(async () => {
                 try {
-                    const GitHubService = require('../services/githubService');
                     const { getGroqService } = require('../services/groqService');
 
                     const parsed = GitHubService.parseGitHubUrl(repositoryUrl);
 
                     if (parsed) {
                         console.log(`📊 [Background] Fetching GitHub data for ${parsed.owner}/${parsed.repo}...`);
-                        const github = new GitHubService();
+                        
+                        // Re-fetch user to get token safely inside async context if needed, 
+                        // but strictly we can rely on existing checks. 
+                        // Note: We need a fresh service instance or reuse one. 
+                        // Ideally we pass the token. fetching user again is safest for long running text
+                        const userSnapshot = await collections.users().doc(userId).get();
+                        const token = userSnapshot.exists ? userSnapshot.data().githubAccessToken : null;
+                        
+                        const github = new GitHubService(token);
                         const fetchedGithubData = await github.getCompleteRepoInfo(parsed.owner, parsed.repo);
 
                         console.log('🤖 [Background] Running AI analysis...');

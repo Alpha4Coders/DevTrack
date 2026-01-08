@@ -12,6 +12,7 @@ import SystemInfo from './pages/SystemInfo'
 import Onboarding from './pages/Onboarding'
 import MobileAuth from './pages/MobileAuth'
 import GitHubInsights from './pages/GitHubInsights'
+import Showcase from './pages/Showcase'
 import { preferencesApi } from './services/api'
 import useHeartbeat from './hooks/useHeartbeat'
 import Lenis from 'lenis'
@@ -121,6 +122,7 @@ function App() {
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/chat" element={<Chat />} />
                         <Route path="/github-insights" element={<GitHubInsights />} />
+                        <Route path="/showcase" element={<Showcase />} />
                         <Route path="/system-info" element={<SystemInfo />} />
                     </Route>
 

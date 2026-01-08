@@ -1,6 +1,6 @@
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { projectsApi, githubApi, geminiApi } from "../services/api";
+import { projectsApi, githubApi, geminiApi, projectIdeasApi, savedIdeasApi, readmeApi } from "../services/api";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Lenis from "lenis";
@@ -24,8 +24,24 @@ import {
   PartyPopper,
   Sparkles,
   Search,
+  Lightbulb,
+  Clock,
+  GraduationCap,
+  Zap,
+  Bookmark,
+  Leaf,
+  Lock,
+  XCircle,
+  AlertTriangle,
+  Globe,
+  ArrowLeft,
+  ChevronDown,
+  Projector,
 } from "lucide-react";
 import SimilarProjectsModal from "../components/projects/SimilarProjectsModal";
+import SavedProjectsModal from "../components/projects/SavedProjectsModal";
+import SavedIdeasModal from "../components/projects/SavedIdeasModal";
+import ReadmeGeneratorModal from "../components/projects/ReadmeGeneratorModal";
 import PixelTransition from "../components/ui/PixelTransition";
 
 // SVG Icon Components
@@ -138,6 +154,7 @@ function ProjectCard({
   delay = 0,
   isExpanded,
   onToggle,
+  onGenerateReadme,
 }) {
   const statusColors = {
     Active: {
@@ -197,7 +214,7 @@ function ProjectCard({
                 animate={{ rotate: isExpanded ? 180 : 0 }}
                 className="text-slate-500 text-xs"
               >
-                ▼
+                <ChevronDown className="w-4 h-4 ml-1 opacity-50" />
               </motion.span>
             </div>
             <p
@@ -357,6 +374,15 @@ function ProjectCard({
           </button>
 
           <div className="flex gap-2">
+            {project.repositoryUrl && (
+              <button
+                onClick={() => onGenerateReadme(project)}
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                title="Generate README"
+              >
+                <FileText className="w-3.5 h-3.5" />
+              </button>
+            )}
             {project.status !== "Completed" && (
               <button
                 onClick={() => onComplete(project)}
@@ -521,6 +547,7 @@ function ProjectForm({
   onCancel,
   isEdit,
   analyzing,
+  error,
 }) {
   const [hasRepo, setHasRepo] = useState(
     isEdit ? (formData.repositoryUrl ? "yes" : "no") : null
@@ -528,9 +555,10 @@ function ProjectForm({
   const [fetchingLanguages, setFetchingLanguages] = useState(false);
   const [fetchedLanguages, setFetchedLanguages] = useState([]);
   const [createRepoMode, setCreateRepoMode] = useState(false);
+  // Initialize newRepoData with formData values (for AI-suggested projects)
   const [newRepoData, setNewRepoData] = useState({
-    name: "",
-    description: "",
+    name: formData.name ? formData.name.toLowerCase().replace(/\s+/g, '-') : "",
+    description: formData.description || "",
     isPrivate: false,
   });
   const [creatingRepo, setCreatingRepo] = useState(false);
@@ -685,7 +713,7 @@ function ProjectForm({
           onClick={() => setHasRepo(null)}
           className="text-slate-400 hover:text-white text-sm flex items-center gap-1 mb-4"
         >
-          ← Back
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </button>
 
         <div className="text-center mb-6">
@@ -741,7 +769,7 @@ function ProjectForm({
               : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
               }`}
           >
-            <p className="font-medium text-white">🌍 Public</p>
+            <p className="font-medium text-white flex items-center gap-1.5"><Globe className="w-4 h-4" /> Public</p>
             <p className="text-xs text-slate-400">Anyone can see</p>
           </button>
           <button
@@ -752,7 +780,7 @@ function ProjectForm({
               : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
               }`}
           >
-            <p className="font-medium text-white">🔒 Private</p>
+            <p className="font-medium text-white flex items-center gap-1.5"><Lock className="w-4 h-4" /> Private</p>
             <p className="text-xs text-slate-400">Only you</p>
           </button>
         </div>
@@ -778,7 +806,7 @@ function ProjectForm({
             className="flex-1"
             disabled={creatingRepo || !newRepoData.name}
           >
-            {creatingRepo ? "🔄 Creating..." : "🚀 Create Repository"}
+            {creatingRepo ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : <><Rocket className="w-4 h-4 mr-2" />Create Repository</>}
           </Button>
         </div>
       </div>
@@ -797,7 +825,7 @@ function ProjectForm({
           }}
           className="text-slate-400 hover:text-white text-sm flex items-center gap-1 mb-2"
         >
-          ← Back
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </button>
       )}
 
@@ -852,7 +880,7 @@ function ProjectForm({
           GitHub Repository
           {hasRepo === "yes" && <span className="text-red-400"> *</span>}
           <span className="text-purple-400 ml-2 text-xs">
-            ✨ Auto-fetches languages!
+            <Sparkles className="w-3 h-3 text-yellow-400" /> Auto-fetches languages!
           </span>
         </label>
         <input
@@ -901,6 +929,20 @@ function ProjectForm({
         />
       </div>
 
+      {/* Error Message - Displayed prominently above buttons */}
+      {error && (
+        <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-2">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle className="w-5 h-5 text-red-400" />
+            <span className="text-red-400 font-semibold">Could not create project</span>
+          </div>
+          <p className="text-red-300 text-sm pl-7">
+            <span className="text-red-400 font-medium">Reason: </span>
+            {error}
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-4 pt-2">
         <Button
           type="button"
@@ -912,7 +954,7 @@ function ProjectForm({
         </Button>
         <Button type="submit" className="flex-1" disabled={analyzing}>
           {analyzing
-            ? "🔍 Analyzing..."
+            ? <><Search className="w-4 h-4 mr-2 animate-pulse" />Analyzing...</>
             : isEdit
               ? "Save Changes"
               : "Create Project"}
@@ -1061,6 +1103,7 @@ export default function Projects() {
 
   const [expandedProjectId, setExpandedProjectId] = useState(null);
   const [error, setError] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -1069,6 +1112,19 @@ export default function Projects() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isBackgroundProcessing, setIsBackgroundProcessing] = useState(false);
   const [showSimilarModal, setShowSimilarModal] = useState(false);
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [showSavedIdeasModal, setShowSavedIdeasModal] = useState(false);
+  const [showIdeasModal, setShowIdeasModal] = useState(false);
+  const [projectIdeas, setProjectIdeas] = useState([]);
+  const [generatingIdeas, setGeneratingIdeas] = useState(false);
+  const [ideaDifficulty, setIdeaDifficulty] = useState('intermediate');
+  // Track shown idea titles with occurrence count (max 2 times per idea)
+  const [shownIdeaTitles, setShownIdeaTitles] = useState({});
+  // Track saved idea titles for bookmark status
+  const [savedIdeaTitles, setSavedIdeaTitles] = useState(new Set());
+  // README Generator Modal
+  const [showReadmeModal, setShowReadmeModal] = useState(false);
+  const [readmeProject, setReadmeProject] = useState(null);
 
   const defaultFormData = {
     name: "",
@@ -1078,6 +1134,11 @@ export default function Projects() {
     technologies: "",
   };
   const [formData, setFormData] = useState(defaultFormData);
+
+  // Clear error when user types
+  useEffect(() => {
+    if (formError) setFormError(null);
+  }, [formData]);
 
   useEffect(() => {
     fetchData();
@@ -1196,11 +1257,24 @@ export default function Projects() {
       let projectData = { ...formData, technologies: techArray };
 
       // Close modal immediately for fast UX
+      // setShowModal(false); // DON'T CLOSE IMMEDIATELY if we want to show errors, but since we want optimistic UI...
+      // Actually, for validation errors we MUST wait for response.
+      // But preserving the "Fast UX" might be tricky if we want to show server errors inline.
+      // The previous code closed modal immediately. This means users never saw server errors in the modal!
+      // They only saw "Failed to create project" alert if it failed.
+      // To show inline errors, we must NOT close modal optimisticly for creation if we want to validate.
+      // However, "optimistic UI" usually implies assuming success.
+      // If we want "proper messages", we should probably wait for at least initial validation response.
+      // Let's change this to wait for creation.
+
+      // Create project
+      const createResponse = await projectsApi.create(projectData);
+
+      // If we get here, it succeeded
       setShowModal(false);
       setFormData(defaultFormData);
+      setFormError(null);
 
-      // Create project (server returns immediately, runs analysis in background)
-      const createResponse = await projectsApi.create(projectData);
       const newProject = createResponse.data?.data;
 
       if (newProject) {
@@ -1235,8 +1309,14 @@ export default function Projects() {
       }
     } catch (err) {
       console.error("Error creating project:", err);
-      alert("Failed to create project");
+      // Backend returns error in 'error' field, not 'message'
+      setFormError(err.response?.data?.error || err.message || "Failed to create project");
     }
+  };
+
+  const handleGenerateReadme = (project) => {
+    setReadmeProject(project);
+    setShowReadmeModal(true);
   };
 
   const handleEdit = (project) => {
@@ -1413,6 +1493,95 @@ export default function Projects() {
     };
   }, [projects]); // Re-init if projects change/load
 
+  // Generate AI project ideas
+  const handleGenerateIdeas = async () => {
+    try {
+      setGeneratingIdeas(true);
+      setProjectIdeas([]);
+
+      // Get titles that have already been shown twice (need to be excluded)
+      const excludeTitles = Object.entries(shownIdeaTitles)
+        .filter(([_, count]) => count >= 2)
+        .map(([title]) => title);
+
+      const response = await projectIdeasApi.generate({
+        difficulty: ideaDifficulty,
+        excludeTitles
+      });
+
+      if (response.data?.success) {
+        const newIdeas = response.data.data.ideas || [];
+        setProjectIdeas(newIdeas);
+
+        // Update shown titles count
+        setShownIdeaTitles(prev => {
+          const updated = { ...prev };
+          newIdeas.forEach(idea => {
+            const title = idea.title;
+            updated[title] = (updated[title] || 0) + 1;
+          });
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Error generating ideas:', err);
+      alert('Failed to generate project ideas. Please try again.');
+    } finally {
+      setGeneratingIdeas(false);
+    }
+  };
+
+  // Start a project from an idea
+  const startIdeaAsProject = (idea) => {
+    setFormData({
+      name: idea.title,
+      description: idea.description,
+      status: 'Planning',
+      repositoryUrl: '',
+      technologies: idea.techStack?.join(', ') || ''
+    });
+    setShowIdeasModal(false);
+    setShowModal(true);
+  };
+
+  // Toggle save/unsave an idea
+  const toggleSaveIdea = async (idea) => {
+    const isSaved = savedIdeaTitles.has(idea.title);
+
+    // Optimistic update
+    setSavedIdeaTitles(prev => {
+      const newSet = new Set(prev);
+      if (isSaved) {
+        newSet.delete(idea.title);
+      } else {
+        newSet.add(idea.title);
+      }
+      return newSet;
+    });
+
+    try {
+      if (isSaved) {
+        // Generate the same ID the backend uses
+        const ideaId = btoa(idea.title).replace(/[/+=]/g, '_').substring(0, 50);
+        await savedIdeasApi.remove(ideaId);
+      } else {
+        await savedIdeasApi.save(idea);
+      }
+    } catch (err) {
+      console.error('Error toggling save:', err);
+      // Rollback on error
+      setSavedIdeaTitles(prev => {
+        const newSet = new Set(prev);
+        if (isSaved) {
+          newSet.add(idea.title);
+        } else {
+          newSet.delete(idea.title);
+        }
+        return newSet;
+      });
+    }
+  };
+
   return (
     <PixelTransition loading={loading}>
       <motion.div>
@@ -1427,6 +1596,30 @@ export default function Projects() {
               </p>
             </div>
             <div className="flex gap-3">
+              <Button
+                onClick={() => setShowIdeasModal(true)}
+                variant="ghost"
+                className="flex items-center gap-2 border border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+              >
+                <Lightbulb className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-emerald-400" />
+                Get Ideas
+              </Button>
+              <Button
+                onClick={() => setShowSavedIdeasModal(true)}
+                variant="ghost"
+                className="flex items-center gap-2 border border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+              >
+                <Bookmark className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-teal-400" />
+                Saved Ideas
+              </Button>
+              <Button
+                onClick={() => setShowSavedModal(true)}
+                variant="ghost"
+                className="flex items-center gap-2 border border-yellow-500/30 hover:border-yellow-500/50 hover:bg-yellow-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+              >
+                <Star className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-yellow-500 fill-yellow-500" />
+                Saved Repos
+              </Button>
               <Button
                 onClick={() => setShowSimilarModal(true)}
                 variant="ghost"
@@ -1500,11 +1693,11 @@ export default function Projects() {
                   className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 mb-6"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-red-400">⚠️</span>
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
                     <p className="text-red-400 flex-1">Error: {error}</p>
                     <Button
                       variant="ghost"
-                      onClick={fetchProjects}
+                      onClick={fetchData}
                       className="text-sm"
                     >
                       Retry
@@ -1555,6 +1748,7 @@ export default function Projects() {
                       }}
                       onReanalyze={handleReanalyze}
                       onComplete={handleComplete}
+                      onGenerateReadme={handleGenerateReadme}
                       analyzing={analyzing}
                       delay={index * 0.1}
                     />
@@ -1572,7 +1766,9 @@ export default function Projects() {
           title="Delete Project?"
         >
           <div className="text-center">
-            <div className="text-5xl mb-4">⚠️</div>
+            <div className="flex justify-center mb-4">
+              <AlertTriangle className="w-12 h-12 text-red-500" />
+            </div>
             <p className="text-slate-400 mb-6">This action cannot be undone.</p>
             <div className="flex gap-4">
               <Button
@@ -1636,6 +1832,7 @@ export default function Projects() {
             onCancel={() => setShowModal(false)}
             isEdit={false}
             analyzing={analyzing}
+            error={formError}
           />
         </Modal>
 
@@ -1658,6 +1855,7 @@ export default function Projects() {
             }}
             isEdit={true}
             analyzing={analyzing}
+            error={formError}
           />
         </Modal>
         {/* Background Processing Indicator */}
@@ -1700,6 +1898,267 @@ export default function Projects() {
             ].slice(0, 3)
           }
         />
+
+        {/* Saved Repos Modal */}
+        <SavedProjectsModal
+          isOpen={showSavedModal}
+          onClose={() => setShowSavedModal(false)}
+        />
+
+        {/* Saved Ideas Modal */}
+        <SavedIdeasModal
+          isOpen={showSavedIdeasModal}
+          onClose={() => setShowSavedIdeasModal(false)}
+          onStartProject={startIdeaAsProject}
+        />
+
+        {/* Readme Generator Modal */}
+        <ReadmeGeneratorModal
+          isOpen={showReadmeModal}
+          onClose={() => {
+            setShowReadmeModal(false);
+            setReadmeProject(null);
+          }}
+          project={readmeProject}
+        />
+
+        {/* Project Ideas Modal */}
+        <Modal
+          isOpen={showIdeasModal}
+          onClose={() => {
+            setShowIdeasModal(false);
+            setProjectIdeas([]);
+          }}
+          title={
+            <div className="flex items-center gap-2">
+              <Projector className="w-6 h-6 text-emerald-400" />
+              <span>AI Project Ideas</span>
+            </div>
+          }
+        >
+          <div className="space-y-6">
+            {/* Header Description with gradient text */}
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-purple-500/20 to-cyan-500/20 rounded-xl blur-xl opacity-50" />
+              <div className="relative p-4 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Get <span className="text-emerald-400 font-medium">personalized project ideas</span> based on your skills, learning history, and current tech stack.
+                </p>
+              </div>
+            </div>
+
+            {/* Difficulty Selector - Enhanced Design */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                Select Difficulty Level
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { value: 'beginner', label: 'Beginner', Icon: Leaf, desc: '1-2 weeks', color: 'emerald' },
+                  { value: 'intermediate', label: 'Intermediate', Icon: Rocket, desc: '2-4 weeks', color: 'purple' },
+                  { value: 'advanced', label: 'Advanced', Icon: Zap, desc: '4-8 weeks', color: 'orange' },
+                ].map((diff) => (
+                  <button
+                    key={diff.value}
+                    type="button"
+                    onClick={() => setIdeaDifficulty(diff.value)}
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 text-center group relative overflow-hidden ${ideaDifficulty === diff.value
+                      ? `bg-${diff.color}-500/20 border-${diff.color}-500 text-white shadow-lg shadow-${diff.color}-500/20`
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/10'
+                      }`}
+                  >
+                    {ideaDifficulty === diff.value && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                    )}
+                    <div className="relative">
+                      <div className="flex justify-center mb-2">
+                        <diff.Icon className={`w-7 h-7 group-hover:scale-110 transition-transform duration-300 ${ideaDifficulty === diff.value
+                          ? diff.color === 'emerald' ? 'text-emerald-400'
+                            : diff.color === 'purple' ? 'text-purple-400'
+                              : 'text-orange-400'
+                          : 'text-slate-400 group-hover:text-white'
+                          }`} />
+                      </div>
+                      <div className="text-sm font-semibold mb-1">{diff.label}</div>
+                      <div className="text-[11px] text-slate-500">{diff.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate Button - Enhanced */}
+            <Button
+              onClick={handleGenerateIdeas}
+              disabled={generatingIdeas}
+              className="w-full h-12 flex items-center justify-center gap-3 text-base font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all duration-300 shadow-lg shadow-emerald-500/20"
+            >
+              {generatingIdeas ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Analyzing your skills...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  <span>Generate Project Ideas</span>
+                </>
+              )}
+            </Button>
+
+            {/* Ideas List - No nested scroll, let Modal's Lenis handle it */}
+            {projectIdeas.length > 0 && (
+              <div className="space-y-4 pt-5 border-t border-white/10">
+                <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                    <Lightbulb className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  Suggested Projects
+                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-white/10 text-slate-400">
+                    {projectIdeas.length} ideas
+                  </span>
+                </h3>
+
+                {/* Ideas Cards - Scrollable via Modal's Lenis */}
+                <div className="space-y-4">
+                  {projectIdeas.map((idea, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      className="group p-5 rounded-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-emerald-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10"
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h4 className="font-bold text-white text-base leading-tight group-hover:text-emerald-300 transition-colors flex-1">
+                          {idea.title}
+                        </h4>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Bookmark Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSaveIdea(idea);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all duration-200 ${savedIdeaTitles.has(idea.title)
+                              ? 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30'
+                              : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-teal-400'
+                              }`}
+                            title={savedIdeaTitles.has(idea.title) ? 'Remove from saved' : 'Save idea'}
+                          >
+                            <Bookmark className={`w-4 h-4 ${savedIdeaTitles.has(idea.title) ? 'fill-teal-400' : ''}`} />
+                          </button>
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-500/30">
+                            {idea.category || 'Project'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-slate-400 text-sm mb-4 leading-relaxed line-clamp-3">
+                        {idea.description}
+                      </p>
+
+                      {/* Tech Stack - Improved tags */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {(idea.techStack || []).slice(0, 6).map((tech, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-[11px] font-medium border border-purple-500/20"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                        {(idea.techStack || []).length > 6 && (
+                          <span className="px-2.5 py-1 rounded-lg bg-white/5 text-slate-500 text-[11px] font-medium">
+                            +{idea.techStack.length - 6} more
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Meta Info - Better layout */}
+                      <div className="flex items-center gap-4 text-xs text-slate-500 mb-4 p-3 rounded-xl bg-white/5 overflow-hidden">
+                        <span className="flex items-center gap-1.5 flex-shrink-0">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                          <span className="text-slate-400 whitespace-nowrap">~{idea.estimatedHours || 40} hours</span>
+                        </span>
+                        <div className="w-px h-4 bg-white/10 flex-shrink-0" />
+                        <span className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
+                          <GraduationCap className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                          <span className="text-slate-400 truncate">
+                            {(idea.newSkillsToLearn || []).slice(0, 2).join(', ') || 'New skills await'}
+                          </span>
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3">
+                        {/* Start Button - Enhanced */}
+                        <Button
+                          onClick={() => startIdeaAsProject(idea)}
+                          variant="ghost"
+                          className="flex-1 h-10 flex items-center justify-center text-sm font-semibold border-2 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/60 text-emerald-400 hover:text-emerald-300 transition-all duration-300 group/btn"
+                        >
+                          <Zap className="w-4 h-4 mr-2 group-hover/btn:animate-pulse" />
+                          Start This Project
+                        </Button>
+
+                        {/* Ask Gemini For Roadmap Button */}
+                        <Button
+                          onClick={async () => {
+                            const prompt =
+                              `Create a detailed step-by-step roadmap for building the following project:\n\n` +
+                              `**Project Title:** ${idea.title}\n\n` +
+                              `**Description:** ${idea.description}\n\n` +
+                              `**Tech Stack:** ${(idea.techStack || []).join(', ')}\n\n` +
+                              `**Estimated Hours:** ${idea.estimatedHours || 40} hours\n\n` +
+                              `Please provide:\n` +
+                              `1. A clear breakdown of phases/milestones\n` +
+                              `2. Specific tasks for each phase with estimated time\n` +
+                              `3. Key technologies and libraries to use for each part\n` +
+                              `4. Potential challenges and how to overcome them\n` +
+                              `5. Learning resources for any new skills needed\n` +
+                              `6. Best practices and tips for success`;
+
+                            try {
+                              await navigator.clipboard.writeText(prompt);
+                              alert('Prompt copied to clipboard! Paste it in Gemini to get your roadmap.');
+                              window.open('https://gemini.google.com/app', '_blank');
+                            } catch (err) {
+                              console.error('Failed to copy:', err);
+                              window.open('https://gemini.google.com/app', '_blank');
+                            }
+                          }}
+                          variant="ghost"
+                          className="flex-1 h-10 flex items-center justify-center text-sm font-semibold border-2 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-500/60 text-blue-400 hover:text-blue-300 transition-all duration-300 group/btn2"
+                        >
+                          <Sparkles className="w-4 h-4 mr-2 group-hover/btn2:animate-pulse" />
+                          Ask Gemini For Roadmap
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State - Enhanced */}
+            {!generatingIdeas && projectIdeas.length === 0 && (
+              <div className="text-center py-12">
+                <div className="relative inline-block mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 to-purple-500/30 rounded-full blur-xl animate-pulse" />
+                  <div className="relative p-4 rounded-full bg-white/5 border border-white/10">
+                    <Lightbulb className="w-10 h-10 text-slate-500" />
+                  </div>
+                </div>
+                <p className="text-slate-400 text-sm font-medium mb-1">Ready to discover ideas?</p>
+                <p className="text-slate-600 text-xs">Click "Generate" to get AI-powered project recommendations</p>
+              </div>
+            )}
+          </div>
+        </Modal>
       </motion.div>
     </PixelTransition>
   );
