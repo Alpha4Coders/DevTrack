@@ -1743,7 +1743,7 @@ export default function Projects() {
         >
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <AlertTriangle className="w-12 h-12 text-yellow-500" />
+              <AlertTriangle className="w-12 h-12 text-red-500" />
             </div>
             <p className="text-slate-400 mb-6">This action cannot be undone.</p>
             <div className="flex gap-4">
