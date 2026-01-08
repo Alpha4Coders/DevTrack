@@ -33,6 +33,10 @@ import {
   Lock,
   XCircle,
   AlertTriangle,
+  Globe,
+  ArrowLeft,
+  ChevronDown,
+  Projector,
 } from "lucide-react";
 import SimilarProjectsModal from "../components/projects/SimilarProjectsModal";
 import SavedProjectsModal from "../components/projects/SavedProjectsModal";
@@ -208,7 +212,7 @@ function ProjectCard({
                 animate={{ rotate: isExpanded ? 180 : 0 }}
                 className="text-slate-500 text-xs"
               >
-                ▼
+                <ChevronDown className="w-4 h-4 ml-1 opacity-50" />
               </motion.span>
             </div>
             <p
@@ -698,7 +702,7 @@ function ProjectForm({
           onClick={() => setHasRepo(null)}
           className="text-slate-400 hover:text-white text-sm flex items-center gap-1 mb-4"
         >
-          ← Back
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </button>
 
         <div className="text-center mb-6">
@@ -754,7 +758,7 @@ function ProjectForm({
               : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
               }`}
           >
-            <p className="font-medium text-white">🌍 Public</p>
+            <p className="font-medium text-white flex items-center gap-1.5"><Globe className="w-4 h-4" /> Public</p>
             <p className="text-xs text-slate-400">Anyone can see</p>
           </button>
           <button
@@ -810,7 +814,7 @@ function ProjectForm({
           }}
           className="text-slate-400 hover:text-white text-sm flex items-center gap-1 mb-2"
         >
-          ← Back
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </button>
       )}
 
@@ -865,7 +869,7 @@ function ProjectForm({
           GitHub Repository
           {hasRepo === "yes" && <span className="text-red-400"> *</span>}
           <span className="text-purple-400 ml-2 text-xs">
-            ✨ Auto-fetches languages!
+            <Sparkles className="w-3 h-3 text-yellow-400" /> Auto-fetches languages!
           </span>
         </label>
         <input
@@ -1895,7 +1899,12 @@ export default function Projects() {
             setShowIdeasModal(false);
             setProjectIdeas([]);
           }}
-          title="🎯 AI Project Ideas"
+          title={
+            <div className="flex items-center gap-2">
+              <Projector className="w-6 h-6 text-emerald-400" />
+              <span>AI Project Ideas</span>
+            </div>
+          }
         >
           <div className="space-y-6">
             {/* Header Description with gradient text */}
