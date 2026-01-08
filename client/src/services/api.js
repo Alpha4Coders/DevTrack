@@ -175,5 +175,12 @@ export const savedIdeasApi = {
     remove: (ideaId) => api.delete(`/saved-ideas/${ideaId}`),
 };
 
+export const readmeApi = {
+    generate: (projectId) => api.post(`/readme/generate/${projectId}`),
+    commit: (projectId, content, commitMessage) => 
+        api.post(`/readme/commit/${projectId}`, { content, commitMessage }),
+};
+
 export default api;
+
 

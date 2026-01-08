@@ -1,6 +1,6 @@
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { projectsApi, githubApi, geminiApi, projectIdeasApi, savedIdeasApi } from "../services/api";
+import { projectsApi, githubApi, geminiApi, projectIdeasApi, savedIdeasApi, readmeApi } from "../services/api";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Lenis from "lenis";
@@ -41,6 +41,7 @@ import {
 import SimilarProjectsModal from "../components/projects/SimilarProjectsModal";
 import SavedProjectsModal from "../components/projects/SavedProjectsModal";
 import SavedIdeasModal from "../components/projects/SavedIdeasModal";
+import ReadmeGeneratorModal from "../components/projects/ReadmeGeneratorModal";
 import PixelTransition from "../components/ui/PixelTransition";
 
 // SVG Icon Components
@@ -153,6 +154,7 @@ function ProjectCard({
   delay = 0,
   isExpanded,
   onToggle,
+  onGenerateReadme,
 }) {
   const statusColors = {
     Active: {
@@ -372,6 +374,15 @@ function ProjectCard({
           </button>
 
           <div className="flex gap-2">
+            {project.repositoryUrl && (
+              <button
+                onClick={() => onGenerateReadme(project)}
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                title="Generate README"
+              >
+                <FileText className="w-3.5 h-3.5" />
+              </button>
+            )}
             {project.status !== "Completed" && (
               <button
                 onClick={() => onComplete(project)}
@@ -1111,6 +1122,9 @@ export default function Projects() {
   const [shownIdeaTitles, setShownIdeaTitles] = useState({});
   // Track saved idea titles for bookmark status
   const [savedIdeaTitles, setSavedIdeaTitles] = useState(new Set());
+  // README Generator Modal
+  const [showReadmeModal, setShowReadmeModal] = useState(false);
+  const [readmeProject, setReadmeProject] = useState(null);
 
   const defaultFormData = {
     name: "",
@@ -1298,6 +1312,11 @@ export default function Projects() {
       // Backend returns error in 'error' field, not 'message'
       setFormError(err.response?.data?.error || err.message || "Failed to create project");
     }
+  };
+
+  const handleGenerateReadme = (project) => {
+    setReadmeProject(project);
+    setShowReadmeModal(true);
   };
 
   const handleEdit = (project) => {
@@ -1729,6 +1748,7 @@ export default function Projects() {
                       }}
                       onReanalyze={handleReanalyze}
                       onComplete={handleComplete}
+                      onGenerateReadme={handleGenerateReadme}
                       analyzing={analyzing}
                       delay={index * 0.1}
                     />
@@ -1890,6 +1910,16 @@ export default function Projects() {
           isOpen={showSavedIdeasModal}
           onClose={() => setShowSavedIdeasModal(false)}
           onStartProject={startIdeaAsProject}
+        />
+
+        {/* Readme Generator Modal */}
+        <ReadmeGeneratorModal
+          isOpen={showReadmeModal}
+          onClose={() => {
+            setShowReadmeModal(false);
+            setReadmeProject(null);
+          }}
+          project={readmeProject}
         />
 
         {/* Project Ideas Modal */}

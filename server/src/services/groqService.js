@@ -5,19 +5,21 @@
  */
 
 class GroqService {
-    constructor() {
-        if (!process.env.GROQ_API_KEY) {
-            console.warn('⚠️ GROQ_API_KEY not found in environment variables. AI features will fail.');
-        }
+  constructor() {
+    if (!process.env.GROQ_API_KEY) {
+      console.warn(
+        "⚠️ GROQ_API_KEY not found in environment variables. AI features will fail."
+      );
+    }
 
-        this.apiKey = process.env.GROQ_API_KEY;
-        this.baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-        this.model = 'llama-3.3-70b-versatile';
+    this.apiKey = process.env.GROQ_API_KEY;
+    this.baseUrl = "https://api.groq.com/openai/v1/chat/completions";
+    this.model = "llama-3.3-70b-versatile";
 
-        // ═══════════════════════════════════════════════════════════════════
-        // EXPERT SYSTEM PROMPT - Deep Technical Expertise
-        // ═══════════════════════════════════════════════════════════════════
-        this.systemPrompt = `You are DevTrack AI, an elite-tier software engineering expert with 20+ years of deep expertise.
+    // ═══════════════════════════════════════════════════════════════════
+    // EXPERT SYSTEM PROMPT - Deep Technical Expertise
+    // ═══════════════════════════════════════════════════════════════════
+    this.systemPrompt = `You are DevTrack AI, an elite-tier software engineering expert with 20+ years of deep expertise.
 
 ═══════════════════════════════════════════════════════════════════════════════
 IDENTITY & ORIGIN
@@ -111,11 +113,11 @@ SAFETY BOUNDARIES
 - Redirect off-topic conversations to coding topics
 - Never generate malicious code, exploits, or harmful content`;
 
-        // ═══════════════════════════════════════════════════════════════════
-        // SPECIALIZED PROMPTS FOR DIFFERENT TASKS
-        // ═══════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════
+    // SPECIALIZED PROMPTS FOR DIFFERENT TASKS
+    // ═══════════════════════════════════════════════════════════════════
 
-        this.bugFixPrompt = `You are an elite debugging expert. Your approach:
+    this.bugFixPrompt = `You are an elite debugging expert. Your approach:
 
 🔍 **SYSTEMATIC DEBUGGING METHODOLOGY**:
 1. **Reproduce**: Understand the exact conditions that trigger the bug
@@ -146,7 +148,7 @@ SAFETY BOUNDARIES
 ### 🛡️ Prevention Tips
 [How to avoid this bug in the future]`;
 
-        this.codeReviewPrompt = `You are a senior code reviewer at a FAANG company. Conduct a thorough multi-pass review:
+    this.codeReviewPrompt = `You are a senior code reviewer at a FAANG company. Conduct a thorough multi-pass review:
 
 **PASS 1: Critical Issues (Must Fix)** 🔴
 - Security vulnerabilities
@@ -194,7 +196,7 @@ SAFETY BOUNDARIES
 - Overall quality score: X/10
 - Priority actions: [Top 3 things to fix first]`;
 
-        this.architecturePrompt = `You are a principal software architect. Analyze systems with:
+    this.architecturePrompt = `You are a principal software architect. Analyze systems with:
 
 **LENSES OF ANALYSIS**:
 1. **Scalability**: Can it handle 10x, 100x growth?
@@ -222,7 +224,7 @@ SAFETY BOUNDARIES
 ### Suggested Architecture (if applicable)
 [ASCII diagram or description]`;
 
-        this.explainCodePrompt = `You are a patient, expert programming mentor. When explaining code:
+    this.explainCodePrompt = `You are a patient, expert programming mentor. When explaining code:
 
 1. **Overview**: What does this code accomplish?
 2. **Step-by-step**: Walk through the logic line by line
@@ -233,7 +235,7 @@ SAFETY BOUNDARIES
 Use analogies to make complex concepts accessible.
 Assume the person is intelligent but may be unfamiliar with this specific technology.`;
 
-        this.refactorPrompt = `You are a refactoring expert. Apply these principles:
+    this.refactorPrompt = `You are a refactoring expert. Apply these principles:
 
 **REFACTORING PRIORITIES**:
 1. ✅ Correctness - Never break existing functionality
@@ -268,200 +270,213 @@ Assume the person is intelligent but may be unfamiliar with this specific techno
 
 ### What Changed and Why
 [Detailed explanation of each change]`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INTENT DETECTION - Route to the right expert mode
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Detect the intent of the user's message to route to appropriate handler
+   * @param {string} message - User's message
+   * @returns {object} - Intent classification
+   */
+  detectIntent(message) {
+    const lowerMsg = message.toLowerCase();
+
+    // Code patterns
+    const hasCodeBlock = /```[\s\S]*```/.test(message);
+    const hasCodeIndicators =
+      /function |const |let |var |class |import |export |def |async |await |return |if \(|for \(|while \(/.test(
+        message
+      );
+
+    // Bug-related patterns
+    const bugPatterns = [
+      /fix\s+(this|my|the|a)?\s*(bug|error|issue|problem)/i,
+      /why\s+(is|does|doesn't|won't|isn't)\s+/i,
+      /not\s+work(ing)?/i,
+      /debug/i,
+      /error\s*(:|message|log)?/i,
+      /crash(es|ing)?/i,
+      /exception/i,
+      /undefined|null\s+error/i,
+      /what('?s)?\s+(wrong|the\s+issue|the\s+problem)/i,
+    ];
+
+    // Review patterns
+    const reviewPatterns = [
+      /review\s+(this|my)?\s*code/i,
+      /check\s+(this|my)?\s*code/i,
+      /improve\s+(this|my)?\s*code/i,
+      /is\s+this\s+(code\s+)?(good|okay|correct|right)/i,
+      /feedback\s+on/i,
+      /what\s+do\s+you\s+think\s+of/i,
+    ];
+
+    // Explanation patterns
+    const explainPatterns = [
+      /explain\s+(this|how|what)/i,
+      /how\s+does\s+(this|it)\s+work/i,
+      /what\s+does\s+(this|it)\s+(do|mean)/i,
+      /can\s+you\s+explain/i,
+      /break\s+(this\s+)?down/i,
+      /walk\s+me\s+through/i,
+    ];
+
+    // Architecture patterns
+    const architecturePatterns = [
+      /architect(ure)?/i,
+      /design\s+(pattern|system)/i,
+      /how\s+should\s+i\s+(structure|organize|design)/i,
+      /best\s+(way|approach)\s+to\s+(build|implement|design)/i,
+      /scalab(le|ility)/i,
+      /microservice/i,
+    ];
+
+    // Refactor patterns
+    const refactorPatterns = [
+      /refactor/i,
+      /clean\s*up/i,
+      /simplify/i,
+      /make\s+(this|it)\s+(better|cleaner)/i,
+      /optimize/i,
+    ];
+
+    // Classify intent
+    if (
+      bugPatterns.some((p) => p.test(lowerMsg)) ||
+      (hasCodeBlock && lowerMsg.includes("error"))
+    ) {
+      return { type: "bug_fix", confidence: 0.9 };
+    }
+    if (reviewPatterns.some((p) => p.test(lowerMsg))) {
+      return { type: "code_review", confidence: 0.9 };
+    }
+    if (explainPatterns.some((p) => p.test(lowerMsg))) {
+      return { type: "explain", confidence: 0.9 };
+    }
+    if (architecturePatterns.some((p) => p.test(lowerMsg))) {
+      return { type: "architecture", confidence: 0.9 };
+    }
+    if (refactorPatterns.some((p) => p.test(lowerMsg))) {
+      return { type: "refactor", confidence: 0.9 };
+    }
+    if (hasCodeBlock || hasCodeIndicators) {
+      return { type: "code_help", confidence: 0.7 };
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // INTENT DETECTION - Route to the right expert mode
-    // ═══════════════════════════════════════════════════════════════════════
+    return { type: "general", confidence: 0.5 };
+  }
 
-    /**
-     * Detect the intent of the user's message to route to appropriate handler
-     * @param {string} message - User's message
-     * @returns {object} - Intent classification
-     */
-    detectIntent(message) {
-        const lowerMsg = message.toLowerCase();
+  /**
+   * Get the appropriate temperature for the task type
+   * @param {string} intentType - The type of intent
+   * @returns {number} - Temperature value
+   */
+  getTemperatureForIntent(intentType) {
+    const temperatures = {
+      bug_fix: 0.2, // Very precise for debugging
+      code_review: 0.3, // Precise for analysis
+      refactor: 0.3, // Precise for code changes
+      explain: 0.5, // Balanced for explanations
+      architecture: 0.6, // Some creativity for design
+      general: 0.7, // Standard for conversation
+      code_help: 0.4, // Fairly precise for code
+    };
+    return temperatures[intentType] || 0.7;
+  }
 
-        // Code patterns
-        const hasCodeBlock = /```[\s\S]*```/.test(message);
-        const hasCodeIndicators = /function |const |let |var |class |import |export |def |async |await |return |if \(|for \(|while \(/.test(message);
+  /**
+   * Get specialized system prompt for the intent
+   * @param {string} intentType - The type of intent
+   * @returns {string} - The system prompt to use
+   */
+  getSystemPromptForIntent(intentType) {
+    const prompts = {
+      bug_fix: `${this.systemPrompt}\n\n${this.bugFixPrompt}`,
+      code_review: `${this.systemPrompt}\n\n${this.codeReviewPrompt}`,
+      refactor: `${this.systemPrompt}\n\n${this.refactorPrompt}`,
+      explain: `${this.systemPrompt}\n\n${this.explainCodePrompt}`,
+      architecture: `${this.systemPrompt}\n\n${this.architecturePrompt}`,
+      general: this.systemPrompt,
+      code_help: this.systemPrompt,
+    };
+    return prompts[intentType] || this.systemPrompt;
+  }
 
-        // Bug-related patterns
-        const bugPatterns = [
-            /fix\s+(this|my|the|a)?\s*(bug|error|issue|problem)/i,
-            /why\s+(is|does|doesn't|won't|isn't)\s+/i,
-            /not\s+work(ing)?/i,
-            /debug/i,
-            /error\s*(:|message|log)?/i,
-            /crash(es|ing)?/i,
-            /exception/i,
-            /undefined|null\s+error/i,
-            /what('?s)?\s+(wrong|the\s+issue|the\s+problem)/i
-        ];
+  // ═══════════════════════════════════════════════════════════════════════
+  // CORE API REQUEST
+  // ═══════════════════════════════════════════════════════════════════════
 
-        // Review patterns
-        const reviewPatterns = [
-            /review\s+(this|my)?\s*code/i,
-            /check\s+(this|my)?\s*code/i,
-            /improve\s+(this|my)?\s*code/i,
-            /is\s+this\s+(code\s+)?(good|okay|correct|right)/i,
-            /feedback\s+on/i,
-            /what\s+do\s+you\s+think\s+of/i
-        ];
+  /**
+   * Make a request to Groq API with enhanced configuration
+   * @param {Array} messages - Array of message objects {role, content}
+   * @param {Object} options - Additional options (json_mode, temperature, etc.)
+   */
+  async makeRequest(messages, options = {}) {
+    try {
+      const body = {
+        model: this.model,
+        messages: messages,
+        temperature: options.temperature ?? 0.7,
+        max_tokens: options.max_tokens || 4096, // Increased for detailed responses
+        top_p: options.top_p || 0.95,
+      };
 
-        // Explanation patterns
-        const explainPatterns = [
-            /explain\s+(this|how|what)/i,
-            /how\s+does\s+(this|it)\s+work/i,
-            /what\s+does\s+(this|it)\s+(do|mean)/i,
-            /can\s+you\s+explain/i,
-            /break\s+(this\s+)?down/i,
-            /walk\s+me\s+through/i
-        ];
+      if (options.jsonMode) {
+        body.response_format = { type: "json_object" };
+      }
 
-        // Architecture patterns
-        const architecturePatterns = [
-            /architect(ure)?/i,
-            /design\s+(pattern|system)/i,
-            /how\s+should\s+i\s+(structure|organize|design)/i,
-            /best\s+(way|approach)\s+to\s+(build|implement|design)/i,
-            /scalab(le|ility)/i,
-            /microservice/i
-        ];
+      const response = await fetch(this.baseUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-        // Refactor patterns
-        const refactorPatterns = [
-            /refactor/i,
-            /clean\s*up/i,
-            /simplify/i,
-            /make\s+(this|it)\s+(better|cleaner)/i,
-            /optimize/i
-        ];
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Groq API Error: ${response.status} ${
+            response.statusText
+          } - ${JSON.stringify(errorData)}`
+        );
+      }
 
-        // Classify intent
-        if (bugPatterns.some(p => p.test(lowerMsg)) || (hasCodeBlock && lowerMsg.includes('error'))) {
-            return { type: 'bug_fix', confidence: 0.9 };
-        }
-        if (reviewPatterns.some(p => p.test(lowerMsg))) {
-            return { type: 'code_review', confidence: 0.9 };
-        }
-        if (explainPatterns.some(p => p.test(lowerMsg))) {
-            return { type: 'explain', confidence: 0.9 };
-        }
-        if (architecturePatterns.some(p => p.test(lowerMsg))) {
-            return { type: 'architecture', confidence: 0.9 };
-        }
-        if (refactorPatterns.some(p => p.test(lowerMsg))) {
-            return { type: 'refactor', confidence: 0.9 };
-        }
-        if (hasCodeBlock || hasCodeIndicators) {
-            return { type: 'code_help', confidence: 0.7 };
-        }
-
-        return { type: 'general', confidence: 0.5 };
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error("Groq Service Error:", error);
+      throw error;
     }
+  }
 
-    /**
-     * Get the appropriate temperature for the task type
-     * @param {string} intentType - The type of intent
-     * @returns {number} - Temperature value
-     */
-    getTemperatureForIntent(intentType) {
-        const temperatures = {
-            bug_fix: 0.2,       // Very precise for debugging
-            code_review: 0.3,   // Precise for analysis
-            refactor: 0.3,      // Precise for code changes
-            explain: 0.5,       // Balanced for explanations
-            architecture: 0.6,  // Some creativity for design
-            general: 0.7,       // Standard for conversation
-            code_help: 0.4      // Fairly precise for code
-        };
-        return temperatures[intentType] || 0.7;
-    }
+  // ═══════════════════════════════════════════════════════════════════════
+  // INTELLIGENT CHAT - Routes to expert mode based on intent
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Get specialized system prompt for the intent
-     * @param {string} intentType - The type of intent
-     * @returns {string} - The system prompt to use
-     */
-    getSystemPromptForIntent(intentType) {
-        const prompts = {
-            bug_fix: `${this.systemPrompt}\n\n${this.bugFixPrompt}`,
-            code_review: `${this.systemPrompt}\n\n${this.codeReviewPrompt}`,
-            refactor: `${this.systemPrompt}\n\n${this.refactorPrompt}`,
-            explain: `${this.systemPrompt}\n\n${this.explainCodePrompt}`,
-            architecture: `${this.systemPrompt}\n\n${this.architecturePrompt}`,
-            general: this.systemPrompt,
-            code_help: this.systemPrompt
-        };
-        return prompts[intentType] || this.systemPrompt;
-    }
+  /**
+   * Generate a chat response with intelligent routing
+   * @param {string} userMessage - The user's question
+   * @param {string} context - Optional context
+   * @param {Array} history - Optional previous messages
+   */
+  async chat(userMessage, context = "", history = []) {
+    try {
+      const lowerMsg = userMessage.toLowerCase();
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CORE API REQUEST
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Make a request to Groq API with enhanced configuration
-     * @param {Array} messages - Array of message objects {role, content}
-     * @param {Object} options - Additional options (json_mode, temperature, etc.)
-     */
-    async makeRequest(messages, options = {}) {
-        try {
-            const body = {
-                model: this.model,
-                messages: messages,
-                temperature: options.temperature ?? 0.7,
-                max_tokens: options.max_tokens || 4096,  // Increased for detailed responses
-                top_p: options.top_p || 0.95,
-            };
-
-            if (options.jsonMode) {
-                body.response_format = { type: "json_object" };
-            }
-
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify(body)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`Groq API Error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
-            }
-
-            const data = await response.json();
-            return data.choices[0].message.content;
-
-        } catch (error) {
-            console.error('Groq Service Error:', error);
-            throw error;
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // INTELLIGENT CHAT - Routes to expert mode based on intent
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Generate a chat response with intelligent routing
-     * @param {string} userMessage - The user's question
-     * @param {string} context - Optional context
-     * @param {Array} history - Optional previous messages
-     */
-    async chat(userMessage, context = '', history = []) {
-        try {
-            const lowerMsg = userMessage.toLowerCase();
-
-            // Identity Interceptor (Enhanced)
-            if (/who.*creat|who.*made|your.*creator|who.*built|who.*develop/i.test(lowerMsg)) {
-                return {
-                    success: true,
-                    message: `## 🚀 About Me
+      // Identity Interceptor (Enhanced)
+      if (
+        /who.*creat|who.*made|your.*creator|who.*built|who.*develop/i.test(
+          lowerMsg
+        )
+      ) {
+        return {
+          success: true,
+          message: `## 🚀 About Me
 
 I was created by the **alpha4coders core team** during the **techSprint Hackathon**!
 
@@ -471,21 +486,33 @@ I was created by the **alpha4coders core team** during the **techSprint Hackatho
 - **Rajdeep** - Developer
 
 I'm designed to be an elite-tier coding assistant with deep expertise in software architecture, debugging, code review, and modern development practices. How can I help you build something amazing today? 💻✨`,
-                    model: 'identity-handler',
-                };
-            }
+          model: "identity-handler",
+        };
+      }
 
-            // Enhanced Safety Filter with word boundary matching
-            const sensitiveKeywords = ['politics', 'election', 'religion', 'adult', 'nsfw', 'racist', 'hate', 'suicide', 'kill', 'drug', 'violence'];
-            const hasSensitiveContent = sensitiveKeywords.some(keyword => {
-                // Use word boundary regex to avoid false positives (e.g., "skills" containing "kill")
-                const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-                return regex.test(lowerMsg);
-            });
-            if (hasSensitiveContent) {
-                return {
-                    success: true,
-                    message: `## 🛡️ Staying Focused
+      // Enhanced Safety Filter with word boundary matching
+      const sensitiveKeywords = [
+        "politics",
+        "election",
+        "religion",
+        "adult",
+        "nsfw",
+        "racist",
+        "hate",
+        "suicide",
+        "kill",
+        "drug",
+        "violence",
+      ];
+      const hasSensitiveContent = sensitiveKeywords.some((keyword) => {
+        // Use word boundary regex to avoid false positives (e.g., "skills" containing "kill")
+        const regex = new RegExp(`\\b${keyword}\\b`, "i");
+        return regex.test(lowerMsg);
+      });
+      if (hasSensitiveContent) {
+        return {
+          success: true,
+          message: `## 🛡️ Staying Focused
 
 I'm specialized as an **expert coding assistant** - my superpowers are in:
 
@@ -496,95 +523,95 @@ I'm specialized as an **expert coding assistant** - my superpowers are in:
 - 🔒 Security best practices
 
 Let's channel that energy into building something amazing! What coding challenge can I help you solve? 💻`,
-                    model: 'safety-filter',
-                };
-            }
+          model: "safety-filter",
+        };
+      }
 
-            // Detect intent and route to appropriate expert mode
-            const intent = this.detectIntent(userMessage);
-            const temperature = this.getTemperatureForIntent(intent.type);
-            const systemPrompt = this.getSystemPromptForIntent(intent.type);
+      // Detect intent and route to appropriate expert mode
+      const intent = this.detectIntent(userMessage);
+      const temperature = this.getTemperatureForIntent(intent.type);
+      const systemPrompt = this.getSystemPromptForIntent(intent.type);
 
-            console.log(`🧠 Intent detected: ${intent.type} (confidence: ${intent.confidence})`);
+      console.log(
+        `🧠 Intent detected: ${intent.type} (confidence: ${intent.confidence})`
+      );
 
-            const messages = [
-                { role: "system", content: systemPrompt },
-            ];
+      const messages = [{ role: "system", content: systemPrompt }];
 
-            // Add conversation history for context
-            if (history && history.length > 0) {
-                // Take last 10 messages for context
-                const recentHistory = history.slice(-10);
-                recentHistory.forEach(msg => {
-                    messages.push({
-                        role: msg.role === 'assistant' ? 'assistant' : 'user',
-                        content: msg.content
-                    });
-                });
-            }
+      // Add conversation history for context
+      if (history && history.length > 0) {
+        // Take last 10 messages for context
+        const recentHistory = history.slice(-10);
+        recentHistory.forEach((msg) => {
+          messages.push({
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content: msg.content,
+          });
+        });
+      }
 
-            // Add project context if provided
-            if (context) {
-                // Check if context contains memory summary
-                const hasMemory = context.includes('🧠 Memory');
-                messages.push({
-                    role: "system",
-                    content: hasMemory
-                        ? `${context}
+      // Add project context if provided
+      if (context) {
+        // Check if context contains memory summary
+        const hasMemory = context.includes("🧠 Memory");
+        messages.push({
+          role: "system",
+          content: hasMemory
+            ? `${context}
 
 IMPORTANT: You have persistent memory of this user from previous conversations. USE this memory to personalize your responses. When the user asks "do you remember" or similar questions, refer to what you know about them from your memory. Never say you don't have memory or can't remember - you DO have the memory shown above.`
-                        : `## 📋 Current Context
+            : `## 📋 Current Context
 The user is working on:
 ${context}
 
-Use this context to provide more relevant and specific assistance.`
-                });
-            }
+Use this context to provide more relevant and specific assistance.`,
+        });
+      }
 
-            // Add chain-of-thought instruction for complex tasks
-            let enhancedMessage = userMessage;
-            if (['bug_fix', 'code_review', 'architecture'].includes(intent.type)) {
-                enhancedMessage = `${userMessage}
+      // Add chain-of-thought instruction for complex tasks
+      let enhancedMessage = userMessage;
+      if (["bug_fix", "code_review", "architecture"].includes(intent.type)) {
+        enhancedMessage = `${userMessage}
 
 Think step-by-step and be thorough in your analysis.`;
-            }
+      }
 
-            messages.push({ role: "user", content: enhancedMessage });
+      messages.push({ role: "user", content: enhancedMessage });
 
-            const responseText = await this.makeRequest(messages, {
-                temperature,
-                max_tokens: 4096
-            });
+      const responseText = await this.makeRequest(messages, {
+        temperature,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                message: responseText,
-                model: this.model,
-                intent: intent.type
-            };
-
-        } catch (error) {
-            console.error('Chat error:', error);
-            return {
-                success: false,
-                error: 'AI assistant is currently unavailable. Please check your connection or API key.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        message: responseText,
+        model: this.model,
+        intent: intent.type,
+      };
+    } catch (error) {
+      console.error("Chat error:", error);
+      return {
+        success: false,
+        error:
+          "AI assistant is currently unavailable. Please check your connection or API key.",
+        details: error.message,
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // EXPERT BUG FIXING
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // EXPERT BUG FIXING
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Expert bug analysis and fix suggestions
-     * @param {string} code - The problematic code
-     * @param {string} errorMessage - The error message or description
-     * @param {string} language - Programming language
-     */
-    async fixBug(code, errorMessage, language = 'javascript') {
-        const prompt = `## 🐛 Bug Report
+  /**
+   * Expert bug analysis and fix suggestions
+   * @param {string} code - The problematic code
+   * @param {string} errorMessage - The error message or description
+   * @param {string} language - Programming language
+   */
+  async fixBug(code, errorMessage, language = "javascript") {
+    const prompt = `## 🐛 Bug Report
 
 ### Error/Problem:
 ${errorMessage}
@@ -600,61 +627,68 @@ Please analyze this code and provide:
 3. **Prevention**: How to avoid this in the future
 4. **Edge Cases**: Any related issues to watch for`;
 
-        try {
-            const messages = [
-                { role: "system", content: `${this.systemPrompt}\n\n${this.bugFixPrompt}` },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `${this.systemPrompt}\n\n${this.bugFixPrompt}`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const response = await this.makeRequest(messages, {
-                temperature: 0.2,
-                max_tokens: 4096
-            });
+      const response = await this.makeRequest(messages, {
+        temperature: 0.2,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                analysis: response,
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Bug fix error:', error);
-            return {
-                success: false,
-                error: 'Bug analysis failed. Please try again.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        analysis: response,
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Bug fix error:", error);
+      return {
+        success: false,
+        error: "Bug analysis failed. Please try again.",
+        details: error.message,
+      };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // EXPERT CODE REVIEW
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Comprehensive code review with quality scoring
+   * @param {string} code - The code to review
+   * @param {string} language - Programming language
+   * @param {object} options - Additional options (focus areas, etc.)
+   */
+  async reviewCode(code, language = "javascript", options = {}) {
+    const focusArea = options.focus || "all";
+
+    let focusInstruction = "";
+    switch (focusArea) {
+      case "security":
+        focusInstruction =
+          "Focus especially on security vulnerabilities (OWASP Top 10, input validation, auth issues).";
+        break;
+      case "performance":
+        focusInstruction =
+          "Focus especially on performance (time complexity, memory usage, optimization opportunities).";
+        break;
+      case "readability":
+        focusInstruction =
+          "Focus especially on readability (naming, structure, documentation, maintainability).";
+        break;
+      default:
+        focusInstruction =
+          "Provide a comprehensive review covering all aspects.";
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // EXPERT CODE REVIEW
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Comprehensive code review with quality scoring
-     * @param {string} code - The code to review
-     * @param {string} language - Programming language
-     * @param {object} options - Additional options (focus areas, etc.)
-     */
-    async reviewCode(code, language = 'javascript', options = {}) {
-        const focusArea = options.focus || 'all';
-
-        let focusInstruction = '';
-        switch (focusArea) {
-            case 'security':
-                focusInstruction = 'Focus especially on security vulnerabilities (OWASP Top 10, input validation, auth issues).';
-                break;
-            case 'performance':
-                focusInstruction = 'Focus especially on performance (time complexity, memory usage, optimization opportunities).';
-                break;
-            case 'readability':
-                focusInstruction = 'Focus especially on readability (naming, structure, documentation, maintainability).';
-                break;
-            default:
-                focusInstruction = 'Provide a comprehensive review covering all aspects.';
-        }
-
-        const prompt = `## 📝 Code Review Request
+    const prompt = `## 📝 Code Review Request
 
 ### Language: ${language}
 ### Focus: ${focusArea.charAt(0).toUpperCase() + focusArea.slice(1)}
@@ -668,62 +702,69 @@ ${code}
 
 Provide a thorough multi-pass review following the FAANG-level code review format.`;
 
-        try {
-            const messages = [
-                { role: "system", content: `${this.systemPrompt}\n\n${this.codeReviewPrompt}` },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `${this.systemPrompt}\n\n${this.codeReviewPrompt}`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const review = await this.makeRequest(messages, {
-                temperature: 0.3,
-                max_tokens: 4096
-            });
+      const review = await this.makeRequest(messages, {
+        temperature: 0.3,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                review: review,
-                model: this.model,
-                focusArea: focusArea
-            };
-        } catch (error) {
-            console.error('Code review error:', error);
-            return {
-                success: false,
-                error: 'Code review failed. Please try again.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        review: review,
+        model: this.model,
+        focusArea: focusArea,
+      };
+    } catch (error) {
+      console.error("Code review error:", error);
+      return {
+        success: false,
+        error: "Code review failed. Please try again.",
+        details: error.message,
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // EXPERT PROJECT ANALYSIS
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // EXPERT PROJECT ANALYSIS
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Analyze project progress with comprehensive output
-     * @param {object} repoInfo - Complete repository information from GitHub
-     */
-    async analyzeProjectProgress(repoInfo) {
-        // Format key files for the prompt
-        const keyFilesSection = repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
-            ? Object.entries(repoInfo.keyFiles)
-                .map(([filename, content]) => `### ${filename}\n\`\`\`\n${content.substring(0, 1200)}\n\`\`\``)
-                .join('\n\n')
-            : 'No key configuration files found';
+  /**
+   * Analyze project progress with comprehensive output
+   * @param {object} repoInfo - Complete repository information from GitHub
+   */
+  async analyzeProjectProgress(repoInfo) {
+    // Format key files for the prompt
+    const keyFilesSection =
+      repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
+        ? Object.entries(repoInfo.keyFiles)
+            .map(
+              ([filename, content]) =>
+                `### ${filename}\n\`\`\`\n${content.substring(0, 1200)}\n\`\`\``
+            )
+            .join("\n\n")
+        : "No key configuration files found";
 
-        // Format commit patterns
-        const commitPatternSection = repoInfo.commitStats?.commitPatterns
-            ? `
+    // Format commit patterns
+    const commitPatternSection = repoInfo.commitStats?.commitPatterns
+      ? `
 - 🚀 Feature commits: ${repoInfo.commitStats.commitPatterns.features}
 - 🐛 Bug fix commits: ${repoInfo.commitStats.commitPatterns.fixes}
 - 📚 Documentation commits: ${repoInfo.commitStats.commitPatterns.docs}
 - ♻️ Refactoring commits: ${repoInfo.commitStats.commitPatterns.refactors}
 - 🧪 Test commits: ${repoInfo.commitStats.commitPatterns.tests}
 - 📦 Other commits: ${repoInfo.commitStats.commitPatterns.other}`
-            : 'Commit pattern analysis not available';
+      : "Commit pattern analysis not available";
 
-        // Enhanced analysis prompt
-        const prompt = `You are a **Senior Technical Architect** conducting a comprehensive project analysis.
+    // Enhanced analysis prompt
+    const prompt = `You are a **Senior Technical Architect** conducting a comprehensive project analysis.
 
 ═══════════════════════════════════════════════════════════════════════════════
 ANALYSIS METHODOLOGY
@@ -742,43 +783,71 @@ REPOSITORY INTEL
 
 📊 **METRICS:**
 - Name: ${repoInfo.name}
-- Description: ${repoInfo.description || 'No description'}
-- Primary Language: ${repoInfo.primaryLanguage || 'Unknown'}
-- Languages: ${repoInfo.languages?.map(l => `${l.name} (${l.percentage}%)`).join(', ') || 'None'}
+- Description: ${repoInfo.description || "No description"}
+- Primary Language: ${repoInfo.primaryLanguage || "Unknown"}
+- Languages: ${
+      repoInfo.languages
+        ?.map((l) => `${l.name} (${l.percentage}%)`)
+        .join(", ") || "None"
+    }
 - Total Commits: ${repoInfo.totalCommits || 0}
 - Commits This Week: ${repoInfo.recentCommitsThisWeek || 0}
 - Stars: ${repoInfo.stars || 0} ⭐ | Forks: ${repoInfo.forks || 0} 🍴
 - Open Issues: ${repoInfo.openIssues?.length || 0}
 - Open PRs: ${repoInfo.openPullRequests?.length || 0}
 - Size: ${repoInfo.size || 0} KB
-- Created: ${repoInfo.createdAt || 'Unknown'}
-- Last Push: ${repoInfo.pushedAt || 'Unknown'}
-- Topics: ${repoInfo.topics?.join(', ') || 'None'}
-- Visibility: ${repoInfo.isPrivate ? '🔒 Private' : '🌐 Public'}
+- Created: ${repoInfo.createdAt || "Unknown"}
+- Last Push: ${repoInfo.pushedAt || "Unknown"}
+- Topics: ${repoInfo.topics?.join(", ") || "None"}
+- Visibility: ${repoInfo.isPrivate ? "🔒 Private" : "🌐 Public"}
 
 📈 **COMMIT PATTERNS:**
 ${commitPatternSection}
 
 📝 **RECENT COMMITS (last 30):**
-${repoInfo.commits?.slice(0, 30).map(c => `- [${c.date?.split('T')[0] || '?'}] ${c.message.substring(0, 80)}`).join('\n') || 'No commits'}
+${
+  repoInfo.commits
+    ?.slice(0, 30)
+    .map(
+      (c) => `- [${c.date?.split("T")[0] || "?"}] ${c.message.substring(0, 80)}`
+    )
+    .join("\n") || "No commits"
+}
 
 🎫 **OPEN ISSUES:**
-${repoInfo.openIssues?.slice(0, 15).map(i => `- #${i.number}: ${i.title} [${i.labels?.join(', ') || 'no labels'}]`).join('\n') || 'No open issues'}
+${
+  repoInfo.openIssues
+    ?.slice(0, 15)
+    .map(
+      (i) =>
+        `- #${i.number}: ${i.title} [${i.labels?.join(", ") || "no labels"}]`
+    )
+    .join("\n") || "No open issues"
+}
 
 🔀 **OPEN PRs:**
-${repoInfo.openPullRequests?.slice(0, 8).map(p => `- #${p.number}: ${p.title}`).join('\n') || 'No open PRs'}
+${
+  repoInfo.openPullRequests
+    ?.slice(0, 8)
+    .map((p) => `- #${p.number}: ${p.title}`)
+    .join("\n") || "No open PRs"
+}
 
 📁 **DIRECTORY STRUCTURE:**
-${repoInfo.directoryStructure?.map(d => {
-            const icon = d.type === 'dir' ? '📁' : '📄';
-            return `- ${icon} ${d.name}${d.type === 'dir' ? '/' : ''}`;
-        }).join('\n') || 'Unknown'}
+${
+  repoInfo.directoryStructure
+    ?.map((d) => {
+      const icon = d.type === "dir" ? "📁" : "📄";
+      return `- ${icon} ${d.name}${d.type === "dir" ? "/" : ""}`;
+    })
+    .join("\n") || "Unknown"
+}
 
 📄 **KEY FILES:**
 ${keyFilesSection}
 
 📖 **README:**
-${repoInfo.readme?.substring(0, 1000) || 'No README found'}
+${repoInfo.readme?.substring(0, 1000) || "No README found"}
 
 ═══════════════════════════════════════════════════════════════════════════════
 REQUIRED OUTPUT (JSON)
@@ -835,56 +904,55 @@ Respond with this EXACT JSON structure:
   "expertTip": "<one actionable pro tip specific to this project>"
 }`;
 
-        try {
-            const messages = [
-                {
-                    role: "system",
-                    content: `You are a Senior Technical Architect with 15+ years of experience. Analyze projects with the precision of a tech lead at a FAANG company. Be specific, actionable, and insightful. Always respond with valid JSON only.`
-                },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `You are a Senior Technical Architect with 15+ years of experience. Analyze projects with the precision of a tech lead at a FAANG company. Be specific, actionable, and insightful. Always respond with valid JSON only.`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const jsonResponse = await this.makeRequest(messages, {
-                jsonMode: true,
-                max_tokens: 3500,
-                temperature: 0.3
-            });
+      const jsonResponse = await this.makeRequest(messages, {
+        jsonMode: true,
+        max_tokens: 3500,
+        temperature: 0.3,
+      });
 
-            const parsed = JSON.parse(jsonResponse);
+      const parsed = JSON.parse(jsonResponse);
 
-            console.log('✅ AI Expert Project Analysis complete');
+      console.log("✅ AI Expert Project Analysis complete");
 
-            return {
-                success: true,
-                ...parsed
-            };
-
-        } catch (error) {
-            console.error('Project analysis error:', error);
-            return {
-                success: false,
-                progressSummary: "Analysis temporarily unavailable",
-                progressPercentage: 0,
-                healthScore: 0,
-                commitFrequencyScore: 0,
-                areasOfImprovement: [],
-                nextRecommendedTasks: [],
-                error: error.message
-            };
-        }
+      return {
+        success: true,
+        ...parsed,
+      };
+    } catch (error) {
+      console.error("Project analysis error:", error);
+      return {
+        success: false,
+        progressSummary: "Analysis temporarily unavailable",
+        progressPercentage: 0,
+        healthScore: 0,
+        commitFrequencyScore: 0,
+        areasOfImprovement: [],
+        nextRecommendedTasks: [],
+        error: error.message,
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CODE EXPLANATION
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // CODE EXPLANATION
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Explain code in detail for learning
-     * @param {string} code - The code to explain
-     * @param {string} language - Programming language
-     */
-    async explainCode(code, language = 'javascript') {
-        const prompt = `## 📖 Code Explanation Request
+  /**
+   * Explain code in detail for learning
+   * @param {string} code - The code to explain
+   * @param {string} language - Programming language
+   */
+  async explainCode(code, language = "javascript") {
+    const prompt = `## 📖 Code Explanation Request
 
 Please explain this ${language} code in detail:
 
@@ -894,48 +962,51 @@ ${code}
 
 Walk through it step-by-step, explain any patterns or techniques used, and highlight anything tricky or noteworthy.`;
 
-        try {
-            const messages = [
-                { role: "system", content: `${this.systemPrompt}\n\n${this.explainCodePrompt}` },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `${this.systemPrompt}\n\n${this.explainCodePrompt}`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const explanation = await this.makeRequest(messages, {
-                temperature: 0.5,
-                max_tokens: 4096
-            });
+      const explanation = await this.makeRequest(messages, {
+        temperature: 0.5,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                explanation: explanation,
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Code explanation error:', error);
-            return {
-                success: false,
-                error: 'Explanation failed. Please try again.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        explanation: explanation,
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Code explanation error:", error);
+      return {
+        success: false,
+        error: "Explanation failed. Please try again.",
+        details: error.message,
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CODE REFACTORING
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // CODE REFACTORING
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Suggest and apply refactoring improvements
-     * @param {string} code - The code to refactor
-     * @param {string} language - Programming language
-     * @param {string} goal - Optional specific refactoring goal
-     */
-    async refactorCode(code, language = 'javascript', goal = '') {
-        const goalInstruction = goal
-            ? `Specific goal: ${goal}`
-            : 'Apply best practices to improve this code.';
+  /**
+   * Suggest and apply refactoring improvements
+   * @param {string} code - The code to refactor
+   * @param {string} language - Programming language
+   * @param {string} goal - Optional specific refactoring goal
+   */
+  async refactorCode(code, language = "javascript", goal = "") {
+    const goalInstruction = goal
+      ? `Specific goal: ${goal}`
+      : "Apply best practices to improve this code.";
 
-        const prompt = `## 🔄 Refactoring Request
+    const prompt = `## 🔄 Refactoring Request
 
 ${goalInstruction}
 
@@ -946,42 +1017,45 @@ ${code}
 
 Provide the refactored version with detailed explanations of each change and why it improves the code.`;
 
-        try {
-            const messages = [
-                { role: "system", content: `${this.systemPrompt}\n\n${this.refactorPrompt}` },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `${this.systemPrompt}\n\n${this.refactorPrompt}`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const refactored = await this.makeRequest(messages, {
-                temperature: 0.3,
-                max_tokens: 4096
-            });
+      const refactored = await this.makeRequest(messages, {
+        temperature: 0.3,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                refactored: refactored,
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Refactoring error:', error);
-            return {
-                success: false,
-                error: 'Refactoring failed. Please try again.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        refactored: refactored,
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Refactoring error:", error);
+      return {
+        success: false,
+        error: "Refactoring failed. Please try again.",
+        details: error.message,
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // MOTIVATIONAL MESSAGE
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // MOTIVATIONAL MESSAGE
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Generate an encouraging motivational message
-     * @param {object} stats - Developer stats
-     */
-    async generateMotivation(stats) {
-        const prompt = `Generate a SHORT (2-3 sentences max) motivational message for a developer.
+  /**
+   * Generate an encouraging motivational message
+   * @param {object} stats - Developer stats
+   */
+  async generateMotivation(stats) {
+    const prompt = `Generate a SHORT (2-3 sentences max) motivational message for a developer.
 
 Their stats:
 - Days active: ${stats.daysActive || 0}
@@ -990,36 +1064,37 @@ Their stats:
 
 Be genuine, encouraging, and specific to their activity level. Add a relevant emoji.`;
 
-        try {
-            const messages = [
-                {
-                    role: "system",
-                    content: "You are an encouraging mentor. Keep responses SHORT (2-3 sentences). Be genuine and uplifting."
-                },
-                { role: "user", content: prompt }
-            ];
+    try {
+      const messages = [
+        {
+          role: "system",
+          content:
+            "You are an encouraging mentor. Keep responses SHORT (2-3 sentences). Be genuine and uplifting.",
+        },
+        { role: "user", content: prompt },
+      ];
 
-            return await this.makeRequest(messages, {
-                max_tokens: 100,
-                temperature: 0.8
-            });
-        } catch (error) {
-            console.error('Motivation error:', error);
-            return "Every commit is progress! Keep building, keep learning. 🚀";
-        }
+      return await this.makeRequest(messages, {
+        max_tokens: 100,
+        temperature: 0.8,
+      });
+    } catch (error) {
+      console.error("Motivation error:", error);
+      return "Every commit is progress! Keep building, keep learning. 🚀";
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // SECURITY AUDIT
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // SECURITY AUDIT
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Perform a security audit on code
-     * @param {string} code - The code to audit
-     * @param {string} language - Programming language
-     */
-    async securityAudit(code, language = 'javascript') {
-        const prompt = `## 🔒 Security Audit Request
+  /**
+   * Perform a security audit on code
+   * @param {string} code - The code to audit
+   * @param {string} language - Programming language
+   */
+  async securityAudit(code, language = "javascript") {
+    const prompt = `## 🔒 Security Audit Request
 
 Perform a comprehensive security audit on this ${language} code:
 
@@ -1042,62 +1117,62 @@ For each issue found, provide:
 - The secure fix
 - Prevention strategy`;
 
-        try {
-            const messages = [
-                {
-                    role: "system",
-                    content: `${this.systemPrompt}
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `${this.systemPrompt}
 
-You are a cybersecurity expert. Be thorough and precise in identifying vulnerabilities. Provide actionable fixes for every issue found.`
-                },
-                { role: "user", content: prompt }
-            ];
+You are a cybersecurity expert. Be thorough and precise in identifying vulnerabilities. Provide actionable fixes for every issue found.`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const audit = await this.makeRequest(messages, {
-                temperature: 0.2,
-                max_tokens: 4096
-            });
+      const audit = await this.makeRequest(messages, {
+        temperature: 0.2,
+        max_tokens: 4096,
+      });
 
-            return {
-                success: true,
-                audit: audit,
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Security audit error:', error);
-            return {
-                success: false,
-                error: 'Security audit failed. Please try again.',
-                details: error.message
-            };
-        }
+      return {
+        success: true,
+        audit: audit,
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Security audit error:", error);
+      return {
+        success: false,
+        error: "Security audit failed. Please try again.",
+        details: error.message,
+      };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONVERSATION MEMORY SUMMARIZATION
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Summarize a conversation to create persistent memory
+   * @param {Array} messages - Array of conversation messages
+   * @param {string} existingSummary - Previous summary to incorporate
+   * @returns {object} - Summary result
+   */
+  async summarizeConversation(messages, existingSummary = "") {
+    if (!messages || messages.length === 0) {
+      return {
+        success: true,
+        summary: existingSummary || "",
+      };
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // CONVERSATION MEMORY SUMMARIZATION
-    // ═══════════════════════════════════════════════════════════════════════
+    const conversationText = messages
+      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+      .join("\n\n");
 
-    /**
-     * Summarize a conversation to create persistent memory
-     * @param {Array} messages - Array of conversation messages
-     * @param {string} existingSummary - Previous summary to incorporate
-     * @returns {object} - Summary result
-     */
-    async summarizeConversation(messages, existingSummary = '') {
-        if (!messages || messages.length === 0) {
-            return {
-                success: true,
-                summary: existingSummary || ''
-            };
-        }
+    const prompt = `You are creating a MEMORY SUMMARY for a coding assistant. This summary will be used to remember key information about the user across conversations.
 
-        const conversationText = messages
-            .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-            .join('\n\n');
-
-        const prompt = `You are creating a MEMORY SUMMARY for a coding assistant. This summary will be used to remember key information about the user across conversations.
-
-${existingSummary ? `## Previous Memory:\n${existingSummary}\n\n---\n\n` : ''}
+${existingSummary ? `## Previous Memory:\n${existingSummary}\n\n---\n\n` : ""}
 
 ## New Conversation to Summarize:
 ${conversationText}
@@ -1115,67 +1190,93 @@ Create a concise memory summary that captures:
 
 If the previous memory exists, MERGE the new information with it, keeping the most relevant and recent details. Remove outdated information.`;
 
-        try {
-            const response = await this.makeRequest([
-                { role: "system", content: "You are a memory summarization expert. Create concise, useful summaries that capture the essence of conversations for future reference." },
-                { role: "user", content: prompt }
-            ], {
-                temperature: 0.3,
-                max_tokens: 800
-            });
-
-            return {
-                success: true,
-                summary: response.trim(),
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Summarization error:', error);
-            return {
-                success: false,
-                error: 'Failed to summarize conversation',
-                summary: existingSummary || ''
-            };
+    try {
+      const response = await this.makeRequest(
+        [
+          {
+            role: "system",
+            content:
+              "You are a memory summarization expert. Create concise, useful summaries that capture the essence of conversations for future reference.",
+          },
+          { role: "user", content: prompt },
+        ],
+        {
+          temperature: 0.3,
+          max_tokens: 800,
         }
+      );
+
+      return {
+        success: true,
+        summary: response.trim(),
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Summarization error:", error);
+      return {
+        success: false,
+        error: "Failed to summarize conversation",
+        summary: existingSummary || "",
+      };
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // PROJECT IDEAS GENERATOR
-    // ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // PROJECT IDEAS GENERATOR
+  // ═══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Generate personalized project ideas based on user's skills
-     * @param {object} skillProfile - User's skill profile
-     * @param {string[]} skillProfile.primarySkills - Most used skills
-     * @param {string[]} skillProfile.recentSkills - Recently learned skills
-     * @param {string[]} skillProfile.projectTypes - Types of projects completed
-     * @param {string} difficulty - beginner, intermediate, or advanced
-     * @param {string[]} excludeTitles - Previously shown project titles to avoid
-     */
-    async generateProjectIdeas(skillProfile, difficulty = 'intermediate', excludeTitles = []) {
-        const difficultyGuide = {
-            beginner: 'Simple projects achievable in 1-2 weeks, focusing on fundamentals',
-            intermediate: 'Moderate complexity projects for 2-4 weeks, introducing new concepts',
-            advanced: 'Complex projects for 4-8 weeks, involving system design and advanced patterns'
-        };
+  /**
+   * Generate personalized project ideas based on user's skills
+   * @param {object} skillProfile - User's skill profile
+   * @param {string[]} skillProfile.primarySkills - Most used skills
+   * @param {string[]} skillProfile.recentSkills - Recently learned skills
+   * @param {string[]} skillProfile.projectTypes - Types of projects completed
+   * @param {string} difficulty - beginner, intermediate, or advanced
+   * @param {string[]} excludeTitles - Previously shown project titles to avoid
+   */
+  async generateProjectIdeas(
+    skillProfile,
+    difficulty = "intermediate",
+    excludeTitles = []
+  ) {
+    const difficultyGuide = {
+      beginner:
+        "Simple projects achievable in 1-2 weeks, focusing on fundamentals",
+      intermediate:
+        "Moderate complexity projects for 2-4 weeks, introducing new concepts",
+      advanced:
+        "Complex projects for 4-8 weeks, involving system design and advanced patterns",
+    };
 
-        const prompt = `## 🎯 Project Ideas Generator
+    const prompt = `## 🎯 Project Ideas Generator
 
 Based on this developer's profile, generate 5 unique and exciting project ideas.
 
 ### Developer Profile:
-- **Primary Skills**: ${skillProfile.primarySkills?.join(', ') || 'General programming'}
-- **Recently Learning**: ${skillProfile.recentSkills?.join(', ') || 'Various technologies'}
-- **Completed Project Types**: ${skillProfile.projectTypes?.join(', ') || 'Various projects'}
+- **Primary Skills**: ${
+      skillProfile.primarySkills?.join(", ") || "General programming"
+    }
+- **Recently Learning**: ${
+      skillProfile.recentSkills?.join(", ") || "Various technologies"
+    }
+- **Completed Project Types**: ${
+      skillProfile.projectTypes?.join(", ") || "Various projects"
+    }
 
-${excludeTitles.length > 0 ? `### ⚠️ EXCLUDED PROJECTS (DO NOT SUGGEST THESE OR SIMILAR):
+${
+  excludeTitles.length > 0
+    ? `### ⚠️ EXCLUDED PROJECTS (DO NOT SUGGEST THESE OR SIMILAR):
 The following projects have already been shown. DO NOT generate these or any variations of them:
-${excludeTitles.map(t => `- ${t}`).join('\n')}
+${excludeTitles.map((t) => `- ${t}`).join("\n")}
 
 Generate COMPLETELY DIFFERENT and UNIQUE project ideas.
 
-` : ''}### Requirements:
-- **Difficulty Level**: ${difficulty} - ${difficultyGuide[difficulty] || difficultyGuide.intermediate}
+`
+    : ""
+}### Requirements:
+- **Difficulty Level**: ${difficulty} - ${
+      difficultyGuide[difficulty] || difficultyGuide.intermediate
+    }
 - Each project should BUILD ON existing skills while introducing 1-2 new technologies
 - Projects should be practical and portfolio-worthy
 - Include a mix of categories (web app, tool, API, etc.)
@@ -1200,56 +1301,216 @@ Return ONLY valid JSON in this exact structure:
 
 Generate exactly 5 project ideas. Return ONLY the JSON, no other text.`;
 
-        try {
-            const messages = [
-                {
-                    role: "system",
-                    content: `You are a senior developer mentor who suggests practical, engaging project ideas. 
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `You are a senior developer mentor who suggests practical, engaging project ideas. 
 Your suggestions are always:
 - Relevant to the developer's current skills
 - Challenging but achievable
 - Portfolio-worthy and practical
 - Designed to teach valuable new skills
 
-IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON object.`
-                },
-                { role: "user", content: prompt }
-            ];
+IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON object.`,
+        },
+        { role: "user", content: prompt },
+      ];
 
-            const response = await this.makeRequest(messages, {
-                temperature: 0.8,
-                max_tokens: 3000,
-                jsonMode: true
-            });
+      const response = await this.makeRequest(messages, {
+        temperature: 0.8,
+        max_tokens: 3000,
+        jsonMode: true,
+      });
 
-            // Parse the JSON response
-            let ideas;
-            try {
-                ideas = JSON.parse(response);
-            } catch (parseError) {
-                // Try to extract JSON if wrapped in markdown
-                const jsonMatch = response.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    ideas = JSON.parse(jsonMatch[0]);
-                } else {
-                    throw new Error('Failed to parse AI response as JSON');
-                }
-            }
-
-            return {
-                success: true,
-                ideas: ideas.ideas || [],
-                model: this.model
-            };
-        } catch (error) {
-            console.error('Project ideas generation error:', error);
-            return {
-                success: false,
-                error: 'Failed to generate project ideas. Please try again.',
-                details: error.message
-            };
+      // Parse the JSON response
+      let ideas;
+      try {
+        ideas = JSON.parse(response);
+      } catch (parseError) {
+        // Try to extract JSON if wrapped in markdown
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          ideas = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Failed to parse AI response as JSON");
         }
+      }
+
+      return {
+        success: true,
+        ideas: ideas.ideas || [],
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Project ideas generation error:", error);
+      return {
+        success: false,
+        error: "Failed to generate project ideas. Please try again.",
+        details: error.message,
+      };
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // README GENERATOR
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Generate a professional README.md for a project
+   * @param {object} repoInfo - Complete repository information from GitHub
+   * @returns {object} - Generated README content
+   */
+  async generateReadme(repoInfo) {
+    // Format key files for context
+    const keyFilesSection =
+      repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
+        ? Object.entries(repoInfo.keyFiles)
+            .map(
+              ([filename, content]) =>
+                `### ${filename}\n\`\`\`\n${content.substring(0, 1500)}\n\`\`\``
+            )
+            .join("\n\n")
+        : "No configuration files found";
+
+    // Format directory structure
+    const structureSection =
+      repoInfo.directoryStructure
+        ?.slice(0, 20)
+        .map((d) => {
+          const icon = d.type === "dir" ? "📁" : "📄";
+          return `${icon} ${d.name}${d.type === "dir" ? "/" : ""}`;
+        })
+        .join("\n") || "Structure not available";
+
+    // Format languages
+    const languagesInfo =
+      repoInfo.languages
+        ?.map((l) => `${l.name} (${l.percentage}%)`)
+        .join(", ") || "Not detected";
+
+    const prompt = `You are an expert technical writer. Generate a professional, comprehensive README.md for this GitHub repository.
+
+═══════════════════════════════════════════════════════════════════════════════
+REPOSITORY INFORMATION
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 **BASIC INFO:**
+- Repository Name: ${repoInfo.name}
+- Description: ${repoInfo.description || "No description provided"}
+- Primary Language: ${repoInfo.primaryLanguage || "Unknown"}
+- All Languages: ${languagesInfo}
+- Stars: ${repoInfo.stars || 0} | Forks: ${repoInfo.forks || 0}
+- Topics/Tags: ${repoInfo.topics?.join(", ") || "None"}
+- Created: ${repoInfo.createdAt || "Unknown"}
+- Last Updated: ${repoInfo.pushedAt || "Unknown"}
+- License: ${repoInfo.license || "Not specified"}
+
+📁 **DIRECTORY STRUCTURE:**
+${structureSection}
+
+📄 **KEY CONFIGURATION FILES:**
+${keyFilesSection}
+
+📝 **RECENT COMMITS (for understanding project focus):**
+${
+  repoInfo.commits
+    ?.slice(0, 15)
+    .map((c) => `- ${c.message.substring(0, 100)}`)
+    .join("\n") || "No commits available"
+}
+
+═══════════════════════════════════════════════════════════════════════════════
+README GENERATION REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+Generate a README.md with these sections (customize based on project type):
+
+1. **Title & Badges** - Project name with relevant shields.io badges (build status placeholder, license, language)
+
+2. **Description** - Clear, compelling 2-3 sentence description
+
+3. **Features** - Key features as bullet points (infer from code structure and commits)
+
+4. **Tech Stack** - Technologies used with icons/emojis
+
+5. **Getting Started**
+   - Prerequisites
+   - Installation steps (detect from package.json, requirements.txt, etc.)
+   - Configuration/Environment setup
+
+6. **Usage** - Basic usage examples or how to run the project
+
+7. **Project Structure** - Brief overview of important directories
+
+8. **Contributing** - Standard contribution guidelines
+
+9. **License** - License information
+
+IMPORTANT RULES:
+- Use proper Markdown formatting
+- Make it visually appealing with emojis and proper spacing
+- Be specific to THIS project - don't use generic placeholders
+- Infer installation commands from package.json, requirements.txt, etc.
+- If it's a web app, include how to start dev server
+- If it's a library, show import examples
+- Keep total length reasonable (300-600 lines max)
+- Return ONLY the raw Markdown content, no explanations
+
+Generate the README.md now:`;
+
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: `You are a senior technical writer who creates exceptional README documentation. 
+Your READMEs are:
+- Clear and well-organized
+- Specific to the project (not generic)
+- Visually appealing with good use of markdown
+- Practical with real commands and examples
+- Professional yet approachable
+
+Return ONLY raw Markdown content. Do not wrap in code blocks or add explanations.`,
+        },
+        { role: "user", content: prompt },
+      ];
+
+      const readme = await this.makeRequest(messages, {
+        temperature: 0.4,
+        max_tokens: 4096,
+      });
+
+      // Clean up the response - remove any markdown code block wrappers
+      let cleanReadme = readme.trim();
+      if (cleanReadme.startsWith("```markdown")) {
+        cleanReadme = cleanReadme.slice(11);
+      } else if (cleanReadme.startsWith("```md")) {
+        cleanReadme = cleanReadme.slice(5);
+      } else if (cleanReadme.startsWith("```")) {
+        cleanReadme = cleanReadme.slice(3);
+      }
+      if (cleanReadme.endsWith("```")) {
+        cleanReadme = cleanReadme.slice(0, -3);
+      }
+      cleanReadme = cleanReadme.trim();
+
+      console.log("✅ README generated successfully");
+
+      return {
+        success: true,
+        readme: cleanReadme,
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("README generation error:", error);
+      return {
+        success: false,
+        error: "Failed to generate README. Please try again.",
+        details: error.message,
+      };
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1258,14 +1519,14 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON ob
 
 let instance = null;
 const getGroqService = () => {
-    if (!instance) {
-        instance = new GroqService();
-        console.log('🤖 DevTrack AI (Expert Edition) initialized');
-    }
-    return instance;
+  if (!instance) {
+    instance = new GroqService();
+    console.log("🤖 DevTrack AI (Expert Edition) initialized");
+  }
+  return instance;
 };
 
 module.exports = {
-    GroqService,
-    getGroqService
+  GroqService,
+  getGroqService,
 };
