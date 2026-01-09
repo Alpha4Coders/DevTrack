@@ -2191,14 +2191,14 @@ export default function Projects() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-3">
+                      <div className="flex gap-1.5 sm:gap-3">
                         {/* Start Button - Enhanced */}
                         <Button
                           onClick={() => startIdeaAsProject(idea)}
                           variant="ghost"
-                          className="flex-1 h-10 flex items-center justify-center text-sm font-semibold border-2 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/60 text-emerald-400 hover:text-emerald-300 transition-all duration-300 group/btn"
+                          className="flex-1 h-8 sm:h-10 flex items-center justify-center text-[9px] sm:text-sm whitespace-nowrap font-semibold border-2 border-emerald-500/40 hover:bg-emerald-500/20 hover:border-emerald-500/60 text-emerald-400 hover:text-emerald-300 transition-all duration-300 group/btn px-1 sm:px-4"
                         >
-                          <Zap className="w-4 h-4 mr-2 group-hover/btn:animate-pulse" />
+                          <Zap className="w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-2 group-hover/btn:animate-pulse" />
                           Start This Project
                         </Button>
 
@@ -2229,9 +2229,9 @@ export default function Projects() {
                             }
                           }}
                           variant="ghost"
-                          className="flex-1 h-10 flex items-center justify-center text-sm font-semibold border-2 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-500/60 text-blue-400 hover:text-blue-300 transition-all duration-300 group/btn2"
+                          className="flex-1 h-8 sm:h-10 flex items-center justify-center text-[9px] sm:text-sm whitespace-nowrap font-semibold border-2 border-blue-500/40 hover:bg-blue-500/20 hover:border-blue-500/60 text-blue-400 hover:text-blue-300 transition-all duration-300 group/btn2 px-1 sm:px-4"
                         >
-                          <GeminiIcon className="w-5 h-5 mr-2 group-hover/btn2:animate-pulse" />
+                          <GeminiIcon className="w-3 h-3 mr-1 sm:w-4 sm:h-4 sm:mr-2 group-hover/btn2:animate-pulse" />
                           Ask Gemini For Roadmap
                         </Button>
                       </div>
