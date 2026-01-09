@@ -1622,19 +1622,19 @@ export default function Projects() {
         {/* Main Container - Background removed */}
         <div className="px-4 md:px-6 py-0 flex flex-col h-[calc(100vh-4rem)] overflow-hidden overflow-x-hidden">
           {/* Header */}
-          <div className="flex justify-between items-start sm:items-center gap-4 mb-2 md:mb-4 flex-shrink-0">
-            <div>
+          <div className="flex flex-col md:flex-col lg:flex-row justify-between items-start md:items-start lg:items-center gap-4 mb-2 md:mb-4 flex-shrink-0">
+            <div className="w-full md:w-full lg:w-auto">
               <h1 className="text-3xl font-bold text-white mb-1">Projects</h1>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-sm whitespace-nowrap md:whitespace-nowrap lg:whitespace-normal">
                 Track your development projects and milestones
               </p>
             </div>
-            {/* Desktop buttons - hidden on mobile */}
-            <div className="hidden md:flex gap-3">
+            {/* Desktop buttons - modified for md screen */}
+            <div className="hidden md:flex flex-row lg:flex-row gap-3 w-full lg:w-auto overflow-x-auto lg:overflow-visible scrollbar-hide pb-2 lg:pb-0">
               <Button
                 onClick={() => setShowIdeasModal(true)}
                 variant="ghost"
-                className="flex items-center gap-2 border border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+                className="flex items-center gap-2 border border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4 whitespace-nowrap"
               >
                 <Lightbulb className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-emerald-400" />
                 Get Ideas
@@ -1642,7 +1642,7 @@ export default function Projects() {
               <Button
                 onClick={() => setShowSavedIdeasModal(true)}
                 variant="ghost"
-                className="flex items-center gap-2 border border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+                className="flex items-center gap-2 border border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4 whitespace-nowrap"
               >
                 <Bookmark className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-teal-400" />
                 Saved Ideas
@@ -1650,7 +1650,7 @@ export default function Projects() {
               <Button
                 onClick={() => setShowSavedModal(true)}
                 variant="ghost"
-                className="flex items-center gap-2 border border-yellow-500/30 hover:border-yellow-500/50 hover:bg-yellow-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+                className="flex items-center gap-2 border border-yellow-500/30 hover:border-yellow-500/50 hover:bg-yellow-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4 whitespace-nowrap"
               >
                 <Star className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-yellow-500 fill-yellow-500" />
                 Saved Repos
@@ -1658,14 +1658,14 @@ export default function Projects() {
               <Button
                 onClick={() => setShowSimilarModal(true)}
                 variant="ghost"
-                className="flex items-center gap-2 border border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+                className="flex items-center gap-2 border border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/10 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4 whitespace-nowrap"
               >
                 <Search className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-purple-400" />
                 Discover Similar
               </Button>
               <Button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4"
+                className="flex items-center gap-2 text-xs lg:text-sm h-8 lg:h-10 px-3 lg:px-4 whitespace-nowrap"
               >
                 <Plus className="w-4 h-4 lg:w-5 lg:h-5" />
                 New Project
