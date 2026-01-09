@@ -415,12 +415,22 @@ Assume the person is intelligent but may be unfamiliar with this specific techno
    * @param {Object} options - Additional options (json_mode, temperature, etc.)
    */
   async makeRequest(messages, options = {}) {
+    return this.makeRequestWithKey(messages, options, this.apiKey);
+  }
+
+  /**
+   * Make a request to Groq API with a specific API key
+   * @param {Array} messages - Array of message objects {role, content}
+   * @param {Object} options - Additional options (json_mode, temperature, etc.)
+   * @param {string} apiKey - The API key to use for this request
+   */
+  async makeRequestWithKey(messages, options = {}, apiKey) {
     try {
       const body = {
         model: this.model,
         messages: messages,
         temperature: options.temperature ?? 0.7,
-        max_tokens: options.max_tokens || 4096, // Increased for detailed responses
+        max_tokens: options.max_tokens || 4096,
         top_p: options.top_p || 0.95,
       };
 
@@ -432,7 +442,7 @@ Assume the person is intelligent but may be unfamiliar with this specific techno
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
       });
@@ -440,8 +450,7 @@ Assume the person is intelligent but may be unfamiliar with this specific techno
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          `Groq API Error: ${response.status} ${
-            response.statusText
+          `Groq API Error: ${response.status} ${response.statusText
           } - ${JSON.stringify(errorData)}`
         );
       }
@@ -745,11 +754,11 @@ Provide a thorough multi-pass review following the FAANG-level code review forma
     const keyFilesSection =
       repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
         ? Object.entries(repoInfo.keyFiles)
-            .map(
-              ([filename, content]) =>
-                `### ${filename}\n\`\`\`\n${content.substring(0, 1200)}\n\`\`\``
-            )
-            .join("\n\n")
+          .map(
+            ([filename, content]) =>
+              `### ${filename}\n\`\`\`\n${content.substring(0, 1200)}\n\`\`\``
+          )
+          .join("\n\n")
         : "No key configuration files found";
 
     // Format commit patterns
@@ -785,11 +794,10 @@ REPOSITORY INTEL
 - Name: ${repoInfo.name}
 - Description: ${repoInfo.description || "No description"}
 - Primary Language: ${repoInfo.primaryLanguage || "Unknown"}
-- Languages: ${
-      repoInfo.languages
+- Languages: ${repoInfo.languages
         ?.map((l) => `${l.name} (${l.percentage}%)`)
         .join(", ") || "None"
-    }
+      }
 - Total Commits: ${repoInfo.totalCommits || 0}
 - Commits This Week: ${repoInfo.recentCommitsThisWeek || 0}
 - Stars: ${repoInfo.stars || 0} ⭐ | Forks: ${repoInfo.forks || 0} 🍴
@@ -805,43 +813,39 @@ REPOSITORY INTEL
 ${commitPatternSection}
 
 📝 **RECENT COMMITS (last 30):**
-${
-  repoInfo.commits
-    ?.slice(0, 30)
-    .map(
-      (c) => `- [${c.date?.split("T")[0] || "?"}] ${c.message.substring(0, 80)}`
-    )
-    .join("\n") || "No commits"
-}
+${repoInfo.commits
+        ?.slice(0, 30)
+        .map(
+          (c) => `- [${c.date?.split("T")[0] || "?"}] ${c.message.substring(0, 80)}`
+        )
+        .join("\n") || "No commits"
+      }
 
 🎫 **OPEN ISSUES:**
-${
-  repoInfo.openIssues
-    ?.slice(0, 15)
-    .map(
-      (i) =>
-        `- #${i.number}: ${i.title} [${i.labels?.join(", ") || "no labels"}]`
-    )
-    .join("\n") || "No open issues"
-}
+${repoInfo.openIssues
+        ?.slice(0, 15)
+        .map(
+          (i) =>
+            `- #${i.number}: ${i.title} [${i.labels?.join(", ") || "no labels"}]`
+        )
+        .join("\n") || "No open issues"
+      }
 
 🔀 **OPEN PRs:**
-${
-  repoInfo.openPullRequests
-    ?.slice(0, 8)
-    .map((p) => `- #${p.number}: ${p.title}`)
-    .join("\n") || "No open PRs"
-}
+${repoInfo.openPullRequests
+        ?.slice(0, 8)
+        .map((p) => `- #${p.number}: ${p.title}`)
+        .join("\n") || "No open PRs"
+      }
 
 📁 **DIRECTORY STRUCTURE:**
-${
-  repoInfo.directoryStructure
-    ?.map((d) => {
-      const icon = d.type === "dir" ? "📁" : "📄";
-      return `- ${icon} ${d.name}${d.type === "dir" ? "/" : ""}`;
-    })
-    .join("\n") || "Unknown"
-}
+${repoInfo.directoryStructure
+        ?.map((d) => {
+          const icon = d.type === "dir" ? "📁" : "📄";
+          return `- ${icon} ${d.name}${d.type === "dir" ? "/" : ""}`;
+        })
+        .join("\n") || "Unknown"
+      }
 
 📄 **KEY FILES:**
 ${keyFilesSection}
@@ -1253,30 +1257,25 @@ If the previous memory exists, MERGE the new information with it, keeping the mo
 Based on this developer's profile, generate 5 unique and exciting project ideas.
 
 ### Developer Profile:
-- **Primary Skills**: ${
-      skillProfile.primarySkills?.join(", ") || "General programming"
-    }
-- **Recently Learning**: ${
-      skillProfile.recentSkills?.join(", ") || "Various technologies"
-    }
-- **Completed Project Types**: ${
-      skillProfile.projectTypes?.join(", ") || "Various projects"
-    }
+- **Primary Skills**: ${skillProfile.primarySkills?.join(", ") || "General programming"
+      }
+- **Recently Learning**: ${skillProfile.recentSkills?.join(", ") || "Various technologies"
+      }
+- **Completed Project Types**: ${skillProfile.projectTypes?.join(", ") || "Various projects"
+      }
 
-${
-  excludeTitles.length > 0
-    ? `### ⚠️ EXCLUDED PROJECTS (DO NOT SUGGEST THESE OR SIMILAR):
+${excludeTitles.length > 0
+        ? `### ⚠️ EXCLUDED PROJECTS (DO NOT SUGGEST THESE OR SIMILAR):
 The following projects have already been shown. DO NOT generate these or any variations of them:
 ${excludeTitles.map((t) => `- ${t}`).join("\n")}
 
 Generate COMPLETELY DIFFERENT and UNIQUE project ideas.
 
 `
-    : ""
-}### Requirements:
-- **Difficulty Level**: ${difficulty} - ${
-      difficultyGuide[difficulty] || difficultyGuide.intermediate
-    }
+        : ""
+      }### Requirements:
+- **Difficulty Level**: ${difficulty} - ${difficultyGuide[difficulty] || difficultyGuide.intermediate
+      }
 - Each project should BUILD ON existing skills while introducing 1-2 new technologies
 - Projects should be practical and portfolio-worthy
 - Include a mix of categories (web app, tool, API, etc.)
@@ -1366,11 +1365,11 @@ IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, just the JSON ob
     const keyFilesSection =
       repoInfo.keyFiles && Object.keys(repoInfo.keyFiles).length > 0
         ? Object.entries(repoInfo.keyFiles)
-            .map(
-              ([filename, content]) =>
-                `### ${filename}\n\`\`\`\n${content.substring(0, 1500)}\n\`\`\``
-            )
-            .join("\n\n")
+          .map(
+            ([filename, content]) =>
+              `### ${filename}\n\`\`\`\n${content.substring(0, 1500)}\n\`\`\``
+          )
+          .join("\n\n")
         : "No configuration files found";
 
     // Format directory structure
@@ -1413,12 +1412,11 @@ ${structureSection}
 ${keyFilesSection}
 
 📝 **RECENT COMMITS (for understanding project focus):**
-${
-  repoInfo.commits
-    ?.slice(0, 15)
-    .map((c) => `- ${c.message.substring(0, 100)}`)
-    .join("\n") || "No commits available"
-}
+${repoInfo.commits
+        ?.slice(0, 15)
+        .map((c) => `- ${c.message.substring(0, 100)}`)
+        .join("\n") || "No commits available"
+      }
 
 ═══════════════════════════════════════════════════════════════════════════════
 README GENERATION REQUIREMENTS
@@ -1728,10 +1726,10 @@ Return ONLY raw Markdown content. Do not wrap in code blocks or add explanations
         { role: "user", content: prompt },
       ];
 
-      const readme = await this.makeRequest(messages, {
+      const readme = await this.makeRequestWithKey(messages, {
         temperature: 0.4,
         max_tokens: 4096,
-      });
+      }, process.env.GROQ_README_API_KEY || this.apiKey);
 
       // Clean up the response - remove any markdown code block wrappers
       let cleanReadme = readme.trim();
