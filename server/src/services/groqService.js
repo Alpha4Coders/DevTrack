@@ -1424,38 +1424,290 @@ ${
 README GENERATION REQUIREMENTS
 ═══════════════════════════════════════════════════════════════════════════════
 
-Generate a README.md with these sections (customize based on project type):
+Generate a README.md with these PREMIUM PROFESSIONAL sections:
 
-1. **Title & Badges** - Project name with relevant shields.io badges (build status placeholder, license, language)
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 1: HERO HEADER (STUNNING FIRST IMPRESSION)
+═══════════════════════════════════════════════════════════════════════════════
+- Use centered HTML layout: \`<div align="center">\`
+- Structure:
+  1. Project title as \`<h1>\` with emoji prefix matching project type
+  2. One-line tagline in \`<p>\` with italic styling
+  3. Badge row with shields.io (style=for-the-badge for prominence):
+     - ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)
+     - ![Version](https://img.shields.io/badge/version-X.X.X-blue?style=for-the-badge) (from package.json)
+     - ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge) (detect from LICENSE)
+     - Language badge with logo
+  4. Close with \`</div>\`
 
-2. **Description** - Clear, compelling 2-3 sentence description
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 2: TABLE OF CONTENTS (NAVIGABLE)
+═══════════════════════════════════════════════════════════════════════════════
+- Collapsible with \`<details>\` tag, open by default: \`<details open>\`
+- Summary: \`<summary><strong>📖 Table of Contents</strong></summary>\`
+- Nested bullet list with emoji prefixes and anchor links:
+  \`\`\`
+  - [✨ Features](#-features)
+  - [🏗️ Tech Stack](#️-tech-stack)
+  - [🚀 Getting Started](#-getting-started)
+  - [📖 Usage](#-usage)
+  - [📁 Project Structure](#-project-structure)
+  - [🔌 API Reference](#-api-reference)
+  - [🤝 Contributing](#-contributing)
+  - [📄 License](#-license)
+  \`\`\`
 
-3. **Features** - Key features as bullet points (infer from code structure and commits)
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 3: DESCRIPTION (COMPELLING NARRATIVE)
+═══════════════════════════════════════════════════════════════════════════════
+- 2-3 impactful sentences explaining:
+  * WHAT the project does (core functionality)
+  * WHO it's for (target users)
+  * WHY it matters (key benefit/problem solved)
+- Add "Key Highlights" as a compact bullet list:
+  \`\`\`
+  > 🎯 **Key Highlights**
+  > - ⚡ Fast and lightweight
+  > - 🔒 Secure authentication
+  > - 📱 Responsive design
+  \`\`\`
 
-4. **Tech Stack** - Technologies used with icons/emojis
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 4: FEATURES (VISUAL FEATURE GRID)
+═══════════════════════════════════════════════════════════════════════════════
+- Use a visually appealing table with category icons:
+  | | Feature | Description |
+  |:--:|---------|-------------|
+  | 🎨 | **Modern UI** | Beautiful, responsive interface built with React |
+  | 🔐 | **Secure Auth** | JWT-based authentication with Clerk |
+  | 📊 | **Analytics** | Real-time dashboard with charts |
+  | 🚀 | **Fast API** | Express.js REST API with optimized queries |
+- **ACCURACY**: Only list features evidenced by actual files/dependencies
+- Group by category if many features (Core, Developer Experience, Security)
 
-5. **Getting Started**
-   - Prerequisites
-   - Installation steps (detect from package.json, requirements.txt, etc.)
-   - Configuration/Environment setup
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 5: TECH STACK (BADGE ARCHITECTURE)
+═══════════════════════════════════════════════════════════════════════════════
+- Organize by layer with emoji subheadings
+- Use shields.io badges with \`style=for-the-badge\` and correct logo slugs:
 
-6. **Usage** - Basic usage examples or how to run the project
+**🎨 Frontend**
+\`\`\`
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+\`\`\`
 
-7. **Project Structure** - Brief overview of important directories
+**⚙️ Backend**
+\`\`\`
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+\`\`\`
 
-8. **Contributing** - Standard contribution guidelines
+**🗄️ Database**
+\`\`\`
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+\`\`\`
 
-9. **License** - License information
+- **CRITICAL ACCURACY**:
+  * Parse EXACT versions from package.json
+  * Use correct logo slugs (nodedotjs, tailwind-css, etc.)
+  * Only include actually-used technologies
 
-IMPORTANT RULES:
-- Use proper Markdown formatting
-- Make it visually appealing with emojis and proper spacing
-- Be specific to THIS project - don't use generic placeholders
-- Infer installation commands from package.json, requirements.txt, etc.
-- If it's a web app, include how to start dev server
-- If it's a library, show import examples
-- Keep total length reasonable (300-600 lines max)
-- Return ONLY the raw Markdown content, no explanations
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 6: GETTING STARTED (STEP-BY-STEP GUIDE)
+═══════════════════════════════════════════════════════════════════════════════
+
+### Prerequisites
+List with version badges:
+\`\`\`
+- ![Node.js](https://img.shields.io/badge/Node.js->=18.0-339933?logo=nodedotjs) 
+- ![npm](https://img.shields.io/badge/npm->=9.0-CB3837?logo=npm)
+- ![MongoDB](https://img.shields.io/badge/MongoDB->=6.0-47A248?logo=mongodb)
+\`\`\`
+
+### Installation
+Use numbered steps with code blocks:
+\`\`\`markdown
+1. **Clone the repository**
+   \`\`\`bash
+   git clone https://github.com/username/repo.git
+   cd repo
+   \`\`\`
+
+2. **Install dependencies**
+   \`\`\`bash
+   # Install client dependencies
+   cd client && npm install
+   
+   # Install server dependencies
+   cd ../server && npm install
+   \`\`\`
+
+3. **Configure environment**
+   \`\`\`bash
+   cp .env.example .env
+   # Edit .env with your values
+   \`\`\`
+\`\`\`
+
+### Environment Variables
+Professional collapsible table:
+\`\`\`html
+<details>
+<summary>🔐 Environment Configuration</summary>
+
+#### Required
+| Variable | Description | Example |
+|:---------|:------------|:--------|
+| \`MONGODB_URI\` | Database connection | \`mongodb://localhost:27017/app\` |
+| \`CLERK_SECRET_KEY\` | Auth provider key | \`sk_test_xxxxx\` |
+
+#### Optional
+| Variable | Description | Default |
+|:---------|:------------|:--------|
+| \`PORT\` | Server port | \`3000\` |
+| \`NODE_ENV\` | Environment | \`development\` |
+
+> 📝 See \`.env.example\` for all variables
+
+</details>
+\`\`\`
+
+### Quick Start
+Single command block:
+\`\`\`bash
+# Start both client and server
+npm run dev
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 7: USAGE (PRACTICAL EXAMPLES)
+═══════════════════════════════════════════════════════════════════════════════
+- Show ACTUAL scripts from package.json:
+\`\`\`bash
+# Development
+npm run dev          # Start dev server with hot reload
+
+# Production
+npm run build        # Build optimized bundle
+npm run start        # Start production server
+
+# Testing
+npm run test         # Run test suite
+npm run test:watch   # Watch mode
+\`\`\`
+
+- If API present, show curl example:
+\`\`\`bash
+# Example: Get all users
+curl http://localhost:3000/api/users
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 8: PROJECT STRUCTURE (ARCHITECTURE OVERVIEW)
+═══════════════════════════════════════════════════════════════════════════════
+- Wrap in \`\`\`text code block
+- Use emojis: 📦 root, 📂 folder, 📄 file
+- 3-4 levels deep with inline comments
+- Adapt to ACTUAL project structure:
+
+\`\`\`text
+📦 project-root
+│
+├── 📂 client/                      # React Frontend
+│   ├── 📂 src/
+│   │   ├── 📂 components/          # UI Components
+│   │   │   ├── 📂 ui/              # Base components
+│   │   │   └── 📂 features/        # Feature modules
+│   │   ├── 📂 pages/               # Route pages
+│   │   ├── 📂 hooks/               # Custom hooks
+│   │   ├── 📂 services/            # API layer
+│   │   ├── 📂 utils/               # Utilities
+│   │   └── 📄 main.jsx             # Entry point
+│   ├── 📄 package.json
+│   ├── 📄 vite.config.js
+│   └── 📄 tailwind.config.js
+│
+├── 📂 server/                      # Express Backend
+│   ├── 📂 src/
+│   │   ├── 📂 controllers/         # Request handlers
+│   │   ├── 📂 middleware/          # Auth, validation
+│   │   ├── 📂 models/              # Database schemas
+│   │   ├── 📂 routes/              # API routes
+│   │   ├── 📂 services/            # Business logic
+│   │   └── 📄 app.js               # Express config
+│   └── 📄 package.json
+│
+├── 📄 docker-compose.yml           # Container orchestration
+├── 📄 .env.example                 # Environment template
+└── 📄 README.md                    # You are here! 📍
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 9: API REFERENCE (IF APPLICABLE)
+═══════════════════════════════════════════════════════════════════════════════
+- Only include if routes/ or controllers/ exist
+- Professional table with method badges:
+
+| Method | Endpoint | Description | Auth |
+|:------:|:---------|:------------|:----:|
+| \`GET\` | \`/api/users\` | Get all users | ✅ |
+| \`POST\` | \`/api/users\` | Create user | ✅ |
+| \`GET\` | \`/api/users/:id\` | Get user by ID | ✅ |
+
+> 📚 Full API documentation available at \`/api/docs\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 10: CONTRIBUTING (WELCOMING GUIDE)
+═══════════════════════════════════════════════════════════════════════════════
+Friendly contribution guide:
+
+\`\`\`markdown
+Contributions are welcome! 🎉
+
+1. Fork the repository
+2. Create your feature branch (\`git checkout -b feature/AmazingFeature\`)
+3. Commit your changes (\`git commit -m 'Add AmazingFeature'\`)
+4. Push to the branch (\`git push origin feature/AmazingFeature\`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 11: LICENSE
+═══════════════════════════════════════════════════════════════════════════════
+- State license with badge:
+\`\`\`markdown
+Distributed under the MIT License. See \`LICENSE\` for more information.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+SECTION 12: FOOTER (PROFESSIONAL CLOSE)
+═══════════════════════════════════════════════════════════════════════════════
+- Horizontal rule
+- Centered "Made with ❤️" or project link
+- Optional: Star badge call-to-action
+
+\`\`\`html
+---
+<div align="center">
+  <p>Made with ❤️ by <a href="https://github.com/username">Your Name</a></p>
+  <p>⭐ Star this repo if you find it useful!</p>
+</div>
+\`\`\`
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL ACCURACY RULES
+═══════════════════════════════════════════════════════════════════════════════
+- **NO HALLUCINATIONS**: Only list features/tech visible in code
+- **VERIFY EVERYTHING**: Cross-check with package.json, file structure
+- **EXACT VERSIONS**: Parse from dependencies, not guessed
+- **REAL COMMANDS**: Use actual scripts from package.json
+- **PROJECT SPECIFIC**: Tailor every section to THIS project
 
 Generate the README.md now:`;
 
