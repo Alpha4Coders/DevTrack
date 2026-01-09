@@ -330,9 +330,9 @@ class ReportService {
                 currentY += 60; // Increased spacing
             }
 
-            // Professional Footer - fixed at bottom of page
-            // Logic to prevent footer appearing on empty page is handled by checkPageBreak padding
-            const footerY = doc.page.height - 50;
+            // Professional Footer - positioned relative to content end
+            // This ensures footer stays with content and never creates an orphan page
+            const footerY = currentY + 30;
             
             // Draw footer line
             doc.moveTo(50, footerY - 10).lineTo(doc.page.width - 50, footerY - 10).strokeColor(this.colors.light).lineWidth(1).stroke();
