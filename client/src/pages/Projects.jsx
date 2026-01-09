@@ -2033,33 +2033,52 @@ export default function Projects() {
               </label>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { value: 'beginner', label: 'Beginner', Icon: Leaf, desc: '1-2 weeks', color: 'emerald' },
-                  { value: 'intermediate', label: 'Intermediate', Icon: Rocket, desc: '2-4 weeks', color: 'purple' },
-                  { value: 'advanced', label: 'Advanced', Icon: Zap, desc: '4-8 weeks', color: 'orange' },
+                  { 
+                    value: 'beginner', 
+                    label: 'Beginner', 
+                    Icon: Leaf, 
+                    desc: '1-2 weeks', 
+                    activeClass: 'bg-emerald-500/20 border-emerald-500 shadow-lg shadow-emerald-500/20 text-white',
+                    iconClass: 'text-emerald-400'
+                  },
+                  { 
+                    value: 'intermediate', 
+                    label: 'Intermediate', 
+                    Icon: Rocket, 
+                    desc: '2-4 weeks', 
+                    activeClass: 'bg-purple-500/20 border-purple-500 shadow-lg shadow-purple-500/20 text-white',
+                    iconClass: 'text-purple-400'
+                  },
+                  { 
+                    value: 'advanced', 
+                    label: 'Advanced', 
+                    Icon: Zap, 
+                    desc: '4-8 weeks', 
+                    activeClass: 'bg-orange-500/20 border-orange-500 shadow-lg shadow-orange-500/20 text-white',
+                    iconClass: 'text-orange-400'
+                  },
                 ].map((diff) => (
                   <button
                     key={diff.value}
                     type="button"
                     onClick={() => setIdeaDifficulty(diff.value)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-300 text-center group relative overflow-hidden ${ideaDifficulty === diff.value
-                      ? `bg-${diff.color}-500/20 border-${diff.color}-500 text-white shadow-lg shadow-${diff.color}-500/20`
+                    className={`p-2 sm:p-4 rounded-xl border-2 transition-all duration-300 text-center group relative overflow-hidden flex flex-col items-center justify-center ${ideaDifficulty === diff.value
+                      ? diff.activeClass
                       : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/10'
                       }`}
                   >
                     {ideaDifficulty === diff.value && (
                       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
                     )}
-                    <div className="relative">
-                      <div className="flex justify-center mb-2">
-                        <diff.Icon className={`w-7 h-7 group-hover:scale-110 transition-transform duration-300 ${ideaDifficulty === diff.value
-                          ? diff.color === 'emerald' ? 'text-emerald-400'
-                            : diff.color === 'purple' ? 'text-purple-400'
-                              : 'text-orange-400'
+                    <div className="relative w-full">
+                      <div className="flex justify-center mb-1 sm:mb-2">
+                        <diff.Icon className={`w-5 h-5 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform duration-300 ${ideaDifficulty === diff.value
+                          ? diff.iconClass
                           : 'text-slate-400 group-hover:text-white'
                           }`} />
                       </div>
-                      <div className="text-sm font-semibold mb-1">{diff.label}</div>
-                      <div className="text-[11px] text-slate-500">{diff.desc}</div>
+                      <div className="text-[10px] sm:text-sm font-semibold mb-0.5 sm:mb-1">{diff.label}</div>
+                      <div className="text-[9px] sm:text-[11px] text-slate-500">{diff.desc}</div>
                     </div>
                   </button>
                 ))}
