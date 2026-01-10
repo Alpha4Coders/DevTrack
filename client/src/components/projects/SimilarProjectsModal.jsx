@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, GitFork, ExternalLink, Sparkles, Search, Loader2, Bookmark } from 'lucide-react';
+import { X, Star, GitFork, ExternalLink, Sparkles, Search, Loader2, Bookmark, RefreshCcw } from 'lucide-react';
 import { githubApi, bookmarksApi } from '../../services/api';
 import Lenis from 'lenis';
 import { useLenis } from 'lenis/react';
@@ -223,12 +223,22 @@ export default function SimilarProjectsModal({ isOpen, onClose, userLanguages = 
                                 </p>
                             </div>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={fetchSimilarProjects}
+                                disabled={loading}
+                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-purple-400 transition-colors disabled:opacity-50"
+                                title="Refresh projects"
+                            >
+                                <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            >
+                                <X className="w-5 h-5 text-slate-400" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Languages Tag */}
@@ -255,8 +265,14 @@ export default function SimilarProjectsModal({ isOpen, onClose, userLanguages = 
                         <div ref={scrollContentRef} className="p-6">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-16">
-                                    <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-4" />
-                                    <p className="text-slate-400">Searching GitHub for similar projects...</p>
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-spin" style={{ animationDuration: '3s' }}>
+                                            <div className="absolute inset-1 bg-slate-900 rounded-full" />
+                                        </div>
+                                        <Search className="w-6 h-6 text-purple-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                    </div>
+                                    <p className="text-slate-400 mt-6">Analyzing your projects...</p>
+                                    <p className="text-slate-500 text-sm mt-2">Finding similar repositories on GitHub</p>
                                 </div>
                             ) : error ? (
                                 <div className="flex flex-col items-center justify-center py-16">
