@@ -1780,6 +1780,127 @@ Return ONLY raw Markdown content. Do not wrap in code blocks or add explanations
       };
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SIMILAR PROJECTS ANALYSIS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Analyze user's repositories and READMEs to extract search keywords
+   * for finding public repos with similar README content and features
+   * @param {object[]} repos - Array of user's repos with details
+   * @param {string[]} readmeContents - Array of README content strings
+   * @returns {object} - Extracted keywords for searching similar READMEs
+   */
+  async analyzeReposForSimilarProjects(repos, readmeContents = []) {
+    // Build context from repos
+    const repoSummaries = repos.slice(0, 5).map(repo => {
+      return `- ${repo.name}: ${repo.description || 'No description'} (${repo.language || 'Unknown'})${repo.topics?.length > 0 ? ` [Topics: ${repo.topics.join(', ')}]` : ''}`;
+    }).join('\n');
+
+    // Combine README snippets - prioritize README content for analysis
+    const readmeContext = readmeContents
+      .filter(r => r)
+      .slice(0, 3)
+      .map((r, i) => `### README ${i + 1}:\n${r.substring(0, 1500)}`)
+      .join('\n\n---\n\n');
+
+    const prompt = `You are an expert at analyzing software project documentation. Your goal is to deeply analyze the user's README files and extract keywords that will help find PUBLIC repositories with SIMILAR README content, features, and project structure on GitHub.
+
+## User's Repositories:
+${repoSummaries}
+
+${readmeContext ? `## README Content (ANALYZE THIS CAREFULLY):\n${readmeContext}` : ''}
+
+## Task:
+Analyze the README content thoroughly and extract:
+
+1. **Core Features** - What features are described in the README? (e.g., "real-time chat", "user authentication", "data visualization", "REST API", "CRUD operations")
+
+2. **Tech Stack Keywords** - Specific technologies mentioned in README (e.g., "React hooks", "Express middleware", "MongoDB aggregation", "JWT authentication")
+
+3. **Project Purpose** - What problem does this project solve? (e.g., "task management", "developer productivity", "e-commerce platform", "social network")
+
+4. **README Patterns** - Common sections/patterns in the README (e.g., "API documentation", "installation guide", "docker setup", "testing framework")
+
+5. **Search Terms** - The BEST keywords to find similar public repos with matching README content
+
+Return ONLY valid JSON in this exact format:
+{
+  "coreFeatures": ["real-time updates", "user authentication", "dashboard analytics"],
+  "techStackKeywords": ["React", "Node.js", "MongoDB", "Socket.io"],
+  "projectPurpose": ["task management", "productivity tool", "developer dashboard"],
+  "readmePatterns": ["API docs", "docker setup", "CI/CD"],
+  "searchTerms": ["fullstack", "mern-stack", "real-time", "dashboard"],
+  "suggestedSearchQuery": "mern stack dashboard real-time analytics"
+}
+
+Focus on extracting terms that describe WHAT the project DOES, not just what technologies it uses. This helps find repos with similar functionality and README structure.
+
+Return ONLY the JSON, no other text.`;
+
+    try {
+      const messages = [
+        {
+          role: "system",
+          content: "You are a README analysis expert. Extract meaningful keywords from README content to find similar projects. Focus on project features, purpose, and functionality - not just technologies. Return only valid JSON.",
+        },
+        { role: "user", content: prompt },
+      ];
+
+      const response = await this.makeRequest(messages, {
+        temperature: 0.3,
+        max_tokens: 1200,
+        jsonMode: true,
+      });
+
+      // Parse the JSON response
+      let analysis;
+      try {
+        analysis = JSON.parse(response);
+      } catch (parseError) {
+        // Try to extract JSON if wrapped in markdown
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Failed to parse AI response as JSON");
+        }
+      }
+
+      return {
+        success: true,
+        coreFeatures: analysis.coreFeatures || [],
+        techStackKeywords: analysis.techStackKeywords || [],
+        projectPurpose: analysis.projectPurpose || [],
+        readmePatterns: analysis.readmePatterns || [],
+        searchTerms: analysis.searchTerms || [],
+        suggestedSearchQuery: analysis.suggestedSearchQuery || "",
+        // Legacy compatibility
+        frameworks: analysis.techStackKeywords || [],
+        projectTypes: analysis.projectPurpose || [],
+        domainKeywords: analysis.coreFeatures || [],
+        searchTopics: analysis.searchTerms || [],
+        model: this.model,
+      };
+    } catch (error) {
+      console.error("Similar projects analysis error:", error);
+      return {
+        success: false,
+        error: "Failed to analyze repositories.",
+        coreFeatures: [],
+        techStackKeywords: [],
+        projectPurpose: [],
+        readmePatterns: [],
+        searchTerms: [],
+        suggestedSearchQuery: "",
+        frameworks: [],
+        projectTypes: [],
+        domainKeywords: [],
+        searchTopics: [],
+      };
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

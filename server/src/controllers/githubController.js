@@ -536,7 +536,7 @@ const getInsights = async (req, res, next) => {
 };
 
 /**
- * Search for similar open-source projects based on user's tech stack
+ * Search for similar open-source projects based on AI analysis of user's repos and READMEs
  * GET /api/github/similar-projects
  */
 const getSimilarProjects = async (req, res, next) => {
@@ -545,14 +545,100 @@ const getSimilarProjects = async (req, res, next) => {
         const { languages, topics, minStars, limit } = req.query;
 
         // Parse query params
-        const languageArray = languages ? languages.split(',').map(l => l.trim()) : [];
-        const topicArray = topics ? topics.split(',').map(t => t.trim()) : [];
+        let languageArray = languages ? languages.split(',').map(l => l.trim()) : [];
+        let topicArray = topics ? topics.split(',').map(t => t.trim()) : [];
         const stars = parseInt(minStars) || 50;
         const perPage = parseInt(limit) || 12;
 
-        // If no filters provided, try to get from user's projects
-        if (languageArray.length === 0 && topicArray.length === 0) {
-            // Fetch user's projects to extract tech stack
+        // Get user data for GitHub access
+        const userDoc = await collections.users().doc(userId).get();
+        if (!userDoc.exists) {
+            throw new APIError('User not found', 404);
+        }
+        const user = userDoc.data();
+
+        // If no filters provided, use AI to analyze user's GitHub repos
+        if (languageArray.length === 0 && topicArray.length === 0 && user.githubUsername) {
+            console.log(`🤖 Using AI to analyze repos for ${user.githubUsername}...`);
+
+            try {
+                // Get user's GitHub access token for private repos
+                let githubAccessToken = user.githubAccessToken || null;
+                const { clerkClient } = require('@clerk/clerk-sdk-node');
+                try {
+                    const oauthTokens = await clerkClient.users.getUserOauthAccessToken(userId, 'oauth_github');
+                    if (oauthTokens?.data?.[0]?.token) {
+                        githubAccessToken = oauthTokens.data[0].token;
+                    }
+                } catch (tokenErr) {
+                    console.warn('Could not get OAuth token:', tokenErr.message);
+                }
+
+                const githubService = new GitHubService(githubAccessToken);
+
+                // Fetch user's actual GitHub repos
+                const repos = await githubService.getRepos(user.githubUsername, 10);
+                console.log(`📦 Fetched ${repos.length} repos for analysis`);
+
+                // Fetch READMEs from top repos (limit to 3 for performance)
+                const readmePromises = repos.slice(0, 3).map(async (repo) => {
+                    try {
+                        const [owner, repoName] = repo.full_name ? repo.full_name.split('/') : [user.githubUsername, repo.name];
+                        return await githubService.getReadme(owner, repoName);
+                    } catch (err) {
+                        return null;
+                    }
+                });
+                const readmeContents = await Promise.all(readmePromises);
+                console.log(`📄 Fetched ${readmeContents.filter(r => r).length} READMEs`);
+
+                // Use AI to analyze repos and extract keywords
+                const getGroqService = require('../services/groqService');
+                const groqService = getGroqService();
+                
+                const analysis = await groqService.analyzeReposForSimilarProjects(repos, readmeContents);
+                
+                if (analysis.success) {
+                    console.log('🧠 AI README Analysis Results:');
+                    console.log(`   Core Features: ${analysis.coreFeatures?.join(', ') || 'N/A'}`);
+                    console.log(`   Tech Stack: ${analysis.techStackKeywords?.join(', ') || 'N/A'}`);
+                    console.log(`   Project Purpose: ${analysis.projectPurpose?.join(', ') || 'N/A'}`);
+                    console.log(`   Search Terms: ${analysis.searchTerms?.join(', ') || 'N/A'}`);
+                    console.log(`   Suggested Query: ${analysis.suggestedSearchQuery || 'N/A'}`);
+
+                    // Build search parameters from AI README analysis
+                    // Prioritize core features and project purpose for README-similar matching
+                    const aiTopics = [
+                        ...analysis.searchTerms?.slice(0, 3) || [],
+                        ...analysis.coreFeatures?.slice(0, 2) || [],
+                        ...analysis.projectPurpose?.slice(0, 1) || [],
+                    ].filter(Boolean);
+
+                    if (aiTopics.length > 0) {
+                        topicArray.push(...aiTopics);
+                    }
+
+                    // Extract languages from repos
+                    const repoLanguages = repos
+                        .map(r => r.language)
+                        .filter(Boolean)
+                        .reduce((acc, lang) => {
+                            acc[lang] = (acc[lang] || 0) + 1;
+                            return acc;
+                        }, {});
+                    
+                    languageArray = Object.entries(repoLanguages)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 3)
+                        .map(([lang]) => lang);
+                }
+            } catch (aiError) {
+                console.error('AI analysis failed, falling back to basic search:', aiError.message);
+            }
+        }
+
+        // Fallback: try to get languages from saved DevTrack projects
+        if (languageArray.length === 0) {
             const projectsSnapshot = await collections.projects()
                 .where('uid', '==', userId)
                 .limit(10)
@@ -581,7 +667,7 @@ const getSimilarProjects = async (req, res, next) => {
             languageArray.push('JavaScript', 'TypeScript', 'Python');
         }
 
-        console.log(`🔍 Searching similar projects for userId: ${userId}`);
+        console.log(`🔍 Final search parameters:`);
         console.log(`   Languages: ${languageArray.join(', ')}`);
         console.log(`   Topics: ${topicArray.join(', ') || 'none'}`);
 
@@ -596,6 +682,7 @@ const getSimilarProjects = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: results,
+            aiEnhanced: topicArray.length > 0, // Flag to indicate AI was used
         });
     } catch (error) {
         next(error);
