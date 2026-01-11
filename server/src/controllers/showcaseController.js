@@ -6,7 +6,7 @@
 const { collections, admin } = require('../config/firebase');
 const { APIError } = require('../middleware/errorHandler');
 const cloudinary = require('cloudinary').v2;
-const { Resend } = require('resend');
+const emailService = require('../services/emailService');
 
 // Initialize Cloudinary
 cloudinary.config({
@@ -14,9 +14,6 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Escape HTML to prevent XSS in emails
 const escapeHtml = (str) => {
@@ -378,23 +375,12 @@ const addComment = async (req, res, next) => {
         // Send email notification to owner (if not commenting on own project)
         if (showcaseData.userId !== userId && showcaseData.ownerEmail) {
             try {
-                await resend.emails.send({
-                    from: 'DevTrack <notifications@resend.dev>',
-                    to: showcaseData.ownerEmail,
-                    subject: `💬 New comment on "${showcaseData.projectName}"`,
-                    html: `
-                        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-                            <h2 style="color: #7c3aed;">New Comment on Your Showcase</h2>
-                            <p><strong>${authorName || 'Someone'}</strong> commented on your project <strong>"${showcaseData.projectName}"</strong>:</p>
-                            <blockquote style="border-left: 4px solid #7c3aed; padding-left: 16px; margin: 16px 0; color: #374151;">
-                                ${escapeHtml(content)}
-                            </blockquote>
-                            <p style="color: #6b7280; font-size: 14px;">
-                                View your showcase on DevTrack to reply.
-                            </p>
-                        </div>
-                    `,
-                });
+                await emailService.sendCommentNotification(
+                    showcaseData.ownerEmail,
+                    showcaseData.projectName,
+                    authorName || 'Someone',
+                    escapeHtml(content)
+                );
             } catch (emailError) {
                 console.error('Failed to send comment notification email:', emailError);
                 // Don't fail the request if email fails
