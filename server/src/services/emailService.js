@@ -7,24 +7,24 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
     constructor() {
-        // Use SSL (port 465) for reliable delivery on cloud platforms
-        const port = parseInt(process.env.SMTP_PORT) || 465;
-        const secure = port === 465; // true for SSL
-
+        // Use Gmail service which handles SMTP configuration automatically
         this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: port,
-            secure: secure,
+            service: 'gmail',
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
-            connectionTimeout: 30000, // 30 seconds
-            greetingTimeout: 30000,
-            socketTimeout: 30000,
+            connectionTimeout: 60000, // 60 seconds
+            greetingTimeout: 60000,
+            socketTimeout: 60000,
+            logger: true, // Enable logging for debugging
+            debug: process.env.NODE_ENV !== 'production',
         });
 
         this.defaultFrom = process.env.EMAIL_FROM || 'DevTrack <alpha4coders@gmail.com>';
+
+        // Log transport configuration
+        console.log('📧 Email service initialized with Gmail');
     }
 
     /**

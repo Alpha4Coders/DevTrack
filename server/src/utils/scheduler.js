@@ -46,9 +46,9 @@ const initializeScheduler = () => {
         }
     });
 
-    // 4. Weekly GitHub PDF Report (Every Sunday at 3:20 PM IST / 09:50 UTC)
+    // 4. Weekly GitHub PDF Report (Every Sunday at 7:00 PM IST / 13:30 UTC)
     // Sends comprehensive activity reports to all users
-    cron.schedule('50 9 * * 0', async () => {
+    cron.schedule('30 13 * * 0', async () => {
         try {
             console.log('📊 Running Weekly PDF Report generation...');
             const reportService = require('../services/reportService');
