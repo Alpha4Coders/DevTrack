@@ -1,18 +1,17 @@
 /**
  * Report Service
- * Generates beautiful weekly GitHub PDF reports and sends via email using Resend
+ * Generates beautiful weekly GitHub PDF reports and sends via email using Gmail SMTP
  */
 
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
-const { Resend } = require('resend');
+const emailService = require('./emailService');
 const { collections } = require('../config/firebase');
 const GitHubService = require('./githubService');
 
 class ReportService {
     constructor() {
-        this.resend = new Resend(process.env.RESEND_API_KEY);
         // Path to logo
         this.logoPath = path.join(__dirname, '../../../client/public/DevTrack.png');
     }
@@ -41,7 +40,7 @@ class ReportService {
     drawHeader(doc, subtitle) {
         // Professional gradient-style header
         doc.rect(0, 0, doc.page.width, 110).fill(this.colors.dark);
-        
+
         // Accent line at bottom of header
         doc.rect(0, 108, doc.page.width, 2).fill(this.colors.primary);
 
@@ -56,7 +55,7 @@ class ReportService {
 
         // Date on right side
         doc.font('Helvetica').fontSize(10).fillColor(this.colors.muted).text(subtitle, doc.page.width - 200, 40, { width: 150, align: 'right' });
-        
+
         // Week range
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -89,11 +88,11 @@ class ReportService {
 
     drawStatBox(doc, label, value, x, y, width = 120, accentColor = null) {
         const color = accentColor || this.colors.primary;
-        
+
         // Box background with subtle border effect
         doc.roundedRect(x, y, width, 55, 8).fill(this.colors.lighter);
         doc.roundedRect(x, y, width, 55, 8).strokeColor(this.colors.light).lineWidth(1).stroke();
-        
+
         // Color accent bar at top
         doc.roundedRect(x, y, width, 4, 2).fill(color);
 
@@ -128,7 +127,7 @@ class ReportService {
         // Badge without icon
         doc.roundedRect(x, y, 115, 30, 15).fill(this.colors.lighter);
         doc.roundedRect(x, y, 115, 30, 15).strokeColor(this.colors.light).lineWidth(1).stroke();
-        
+
         doc.font('Helvetica-Bold').fontSize(9).fillColor(this.colors.text).text(name, x + 5, y + 10, { width: 105, align: 'center' });
     }
 
@@ -237,34 +236,33 @@ class ReportService {
 
                 // Activity stats in a grid
                 const activityBoxWidth = (doc.page.width - 140) / 3;
-                
+
                 this.drawStatBox(doc, 'Pushes', recentActivity.pushEvents || '0', 50, currentY, activityBoxWidth, this.colors.primary);
                 this.drawStatBox(doc, 'Pull Requests', recentActivity.prEvents || '0', 50 + activityBoxWidth + 20, currentY, activityBoxWidth, this.colors.secondary);
                 this.drawStatBox(doc, 'Issue Events', recentActivity.issueEvents || '0', 50 + (activityBoxWidth + 20) * 2, currentY, activityBoxWidth, this.colors.accent);
-                
+
                 currentY += 90; // Increased spacing
 
                 // Active Repositories Section - Professional Design
                 if (recentActivity.reposWorkedOn && recentActivity.reposWorkedOn.length > 0) {
-                     // Use consistent section header styling
-                     currentY = this.drawSectionHeader(doc, 'Active Repositories This Week', currentY);
-                     
-                     // Subtitle with count
-                     doc.font('Helvetica').fontSize(9).fillColor(this.colors.muted)
-                        .text(`${recentActivity.reposWorkedOn.length} ${recentActivity.reposWorkedOn.length === 1 ? 'repository' : 'repositories'} with commits in the last 7 days`, 50, currentY);
-                     
-                     currentY += 25;
-                     
-                     // Calculate widths for a grid of 2 (larger cards)
-                     const repoBoxWidth = (doc.page.width - 110) / 2;
-                     const cardHeight = 72;
-                     let repoX = 50;
-                     let repoRow = 0;
-                     
-                     // Color palette for accent bars - professional colors
-                     const accentColors = [this.colors.primary, this.colors.success, this.colors.accent, this.colors.warning];
+                    // Use consistent section header styling
+                    currentY = this.drawSectionHeader(doc, 'Active Repositories This Week', currentY);
 
-                     recentActivity.reposWorkedOn.slice(0, 4).forEach((repoData, index) => {
+                    // Subtitle with count
+                    doc.font('Helvetica').fontSize(9).fillColor(this.colors.muted)
+                        .text(`${recentActivity.reposWorkedOn.length} ${recentActivity.reposWorkedOn.length === 1 ? 'repository' : 'repositories'} with commits in the last 7 days`, 50, currentY);
+
+                    currentY += 25;
+
+                    // Calculate widths for a grid of 2 (larger cards)
+                    const repoBoxWidth = (doc.page.width - 110) / 2;
+                    const cardHeight = 72;
+                    let repoX = 50;
+
+                    // Color palette for accent bars - professional colors
+                    const accentColors = [this.colors.primary, this.colors.success, this.colors.accent, this.colors.warning];
+
+                    recentActivity.reposWorkedOn.slice(0, 4).forEach((repoData, index) => {
                         // Handle both old format (string) and new format (object with metadata)
                         const repoName = typeof repoData === 'string' ? repoData : repoData.name;
                         const shortName = typeof repoData === 'object' && repoData.shortName ? repoData.shortName : repoName.split('/')[1] || repoName;
@@ -275,83 +273,82 @@ class ReportService {
                         const commits = typeof repoData === 'object' ? repoData.commitsThisWeek : 0;
                         const repoUrl = `https://github.com/${repoName}`;
                         const accentColor = accentColors[index % accentColors.length];
-                        
+
                         // Position calculation for 2-column grid
                         if (index > 0 && index % 2 === 0) {
                             currentY += cardHeight + 15;
                             repoX = 50;
-                            repoRow++;
                         }
-                        
+
                         // Card Background - clean white with subtle border
                         doc.roundedRect(repoX, currentY, repoBoxWidth, cardHeight, 6).fill(this.colors.lighter);
                         doc.roundedRect(repoX, currentY, repoBoxWidth, cardHeight, 6).strokeColor(this.colors.light).lineWidth(1).stroke();
-                        
+
                         // Left accent bar
                         doc.save();
                         doc.roundedRect(repoX, currentY, 4, cardHeight, 6).clip();
                         doc.rect(repoX, currentY, 4, cardHeight).fill(accentColor);
                         doc.restore();
-                        
+
                         // Repo Name (larger, clickable, darker)
                         doc.font('Helvetica-Bold').fontSize(11).fillColor(this.colors.text)
-                           .text(shortName, repoX + 14, currentY + 12, { width: repoBoxWidth - 28, align: 'left', lineBreak: false, ellipsis: true, link: repoUrl, underline: false });
-                        
+                            .text(shortName, repoX + 14, currentY + 12, { width: repoBoxWidth - 28, align: 'left', lineBreak: false, ellipsis: true, link: repoUrl, underline: false });
+
                         // Stats row - Language, Commits, Stars
                         const statsY = currentY + 30;
                         let statsX = repoX + 14;
-                        
+
                         // Language badge (if available)
                         if (language) {
                             const langWidth = Math.min(language.length * 5.5 + 14, 65);
                             doc.roundedRect(statsX, statsY, langWidth, 15, 3).fill(this.colors.darkGray);
                             doc.font('Helvetica-Bold').fontSize(7).fillColor(this.colors.white)
-                               .text(language, statsX, statsY + 4, { width: langWidth, align: 'center' });
+                                .text(language, statsX, statsY + 4, { width: langWidth, align: 'center' });
                             statsX += langWidth + 8;
                         }
-                        
+
                         // Commits this week
                         if (commits > 0) {
                             const commitText = `${commits} commit${commits !== 1 ? 's' : ''}`;
                             doc.font('Helvetica').fontSize(8).fillColor(this.colors.textLight)
-                               .text(commitText, statsX, statsY + 3);
+                                .text(commitText, statsX, statsY + 3);
                             statsX += doc.widthOfString(commitText) + 12;
                         }
-                        
+
                         // Stars (if any)
                         if (stars > 0) {
                             doc.font('Helvetica').fontSize(8).fillColor(this.colors.warning)
-                               .text(`${stars} stars`, statsX, statsY + 3);
+                                .text(`${stars} stars`, statsX, statsY + 3);
                         }
-                        
+
                         // Tags row - Private/Public and Owner/Contributor
                         const tagY = currentY + 50;
                         let tagX = repoX + 14;
-                        
+
                         // Private/Public tag
                         const visibilityLabel = isPrivate ? 'Private' : 'Public';
                         const visibilityColor = isPrivate ? this.colors.warning : this.colors.success;
                         const visibilityWidth = 42;
                         doc.roundedRect(tagX, tagY, visibilityWidth, 15, 3).fill(visibilityColor);
                         doc.font('Helvetica-Bold').fontSize(7).fillColor(this.colors.white)
-                           .text(visibilityLabel, tagX, tagY + 4, { width: visibilityWidth, align: 'center' });
-                        
+                            .text(visibilityLabel, tagX, tagY + 4, { width: visibilityWidth, align: 'center' });
+
                         tagX += visibilityWidth + 6;
-                        
+
                         // Owner/Contributor tag
                         const roleLabel = isOwner ? 'Owner' : 'Contributor';
                         const roleColor = isOwner ? this.colors.primary : this.colors.secondary;
                         const roleWidth = isOwner ? 42 : 60;
                         doc.roundedRect(tagX, tagY, roleWidth, 15, 3).fill(roleColor);
                         doc.font('Helvetica-Bold').fontSize(7).fillColor(this.colors.white)
-                           .text(roleLabel, tagX, tagY + 4, { width: roleWidth, align: 'center' });
-                        
+                            .text(roleLabel, tagX, tagY + 4, { width: roleWidth, align: 'center' });
+
                         repoX += repoBoxWidth + 10;
-                     });
-                     
-                     // Calculate space used based on number of rows
-                     const numRows = Math.ceil(Math.min(recentActivity.reposWorkedOn.length, 4) / 2);
-                     currentY += (cardHeight * numRows) + (15 * (numRows - 1)) + 30;
+                    });
+
+                    // Calculate space used based on number of rows
+                    const numRows = Math.ceil(Math.min(recentActivity.reposWorkedOn.length, 4) / 2);
+                    currentY += (cardHeight * numRows) + (15 * (numRows - 1)) + 30;
                 } else {
                     currentY += 30;
                 }
@@ -408,10 +405,10 @@ class ReportService {
             // Professional Footer - positioned relative to content end
             // This ensures footer stays with content and never creates an orphan page
             const footerY = currentY + 30;
-            
+
             // Draw footer line
             doc.moveTo(50, footerY - 10).lineTo(doc.page.width - 50, footerY - 10).strokeColor(this.colors.light).lineWidth(1).stroke();
-            
+
             // Draw footer text
             doc.font('Helvetica').fontSize(9).fillColor(this.colors.muted);
             doc.text('Generated by DevTrack • Your Developer Consistency Tracker', 50, footerY, { align: 'center', width: doc.page.width - 100 });
@@ -443,37 +440,19 @@ class ReportService {
             const pdfBuffer = await this.generatePDFReport(userId);
 
             console.log(`Sending report to ${user.email}...`);
-            const { data, error } = await this.resend.emails.send({
-                from: 'DevTrack <reports@resend.dev>',
-                to: user.email,
-                subject: `Your Weekly GitHub Report - ${new Date().toLocaleDateString()}`,
-                html: `
-                    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; padding: 40px; border-radius: 16px;">
-                        <h1 style="color: #6366f1; margin-bottom: 8px;">Weekly DevTrack Report</h1>
-                        <p style="color: #94a3b8; margin-bottom: 24px;">Hi ${user.name || user.githubUsername},</p>
-                        <p style="color: #e2e8f0;">Your weekly GitHub activity report is attached as a PDF.</p>
-                        <p style="color: #e2e8f0;">Keep up the great work and maintain your coding streak!</p>
-                        <hr style="border: 1px solid #1e293b; margin: 24px 0;">
-                        <p style="color: #64748b; font-size: 12px;">
-                            Generated by DevTrack - Your Developer Consistency Tracker
-                        </p>
-                    </div>
-                `,
-                attachments: [
-                    {
-                        filename: `devtrack-report-${new Date().toISOString().split('T')[0]}.pdf`,
-                        content: pdfBuffer.toString('base64'),
-                    }
-                ]
-            });
+            const result = await emailService.sendWeeklyReport(
+                user.email,
+                user.name || user.githubUsername,
+                pdfBuffer
+            );
 
-            if (error) {
-                console.error(`Failed to send report to ${user.email}:`, error);
-                return { success: false, error: error.message };
+            if (!result.success) {
+                console.error(`Failed to send report to ${user.email}:`, result.error);
+                return { success: false, error: result.error };
             }
 
             console.log(`Report sent to ${user.email}!`);
-            return { success: true, emailId: data?.id };
+            return { success: true, messageId: result.messageId };
         } catch (error) {
             console.error(`Error sending report to user ${userId}:`, error.message);
             return { success: false, error: error.message };
