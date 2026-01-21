@@ -35,12 +35,6 @@ const WelcomeStep = ({ onNext, onSkip }) => (
             >
                 Let's Get Started
             </button>
-            <button
-                onClick={onSkip}
-                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
-            >
-                Skip with defaults
-            </button>
         </div>
     </motion.div>
 );
