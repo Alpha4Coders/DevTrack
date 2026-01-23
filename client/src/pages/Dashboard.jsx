@@ -851,7 +851,7 @@ export default function Dashboard() {
                                     </motion.div>
                                     <h2 className="text-3xl font-bold mb-4">Welcome to DevTrack!</h2>
                                     <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-                                        Start your developer journey by importing your GitHub repos or logging your first learning session.
+                                        Import your project from the <span className="text-purple-400 font-semibold">Projects page</span> from the top bar/sidebar or add a learning log to view a proper dashboard.
                                     </p>
                                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                                         <Link to="/projects?import=github">
