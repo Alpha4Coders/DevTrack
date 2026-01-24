@@ -10,6 +10,8 @@ import Lenis from 'lenis'
 import { ReactLenis, useLenis } from 'lenis/react'
 import DatePicker from '../components/ui/DatePicker'
 import TimePicker from '../components/ui/TimePicker'
+import LeetCodeStats from '../components/learning/LeetCodeStats'
+import TopSkills from '../components/learning/TopSkills'
 
 
 import { createPortal } from 'react-dom'
@@ -478,7 +480,7 @@ export default function Learning() {
                     className="px-4 md:px-6 py-0 flex flex-col h-[calc(100vh-4rem)] overflow-hidden overflow-x-hidden"
                 >
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 flex-shrink-0">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 flex-shrink-0">
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-1">Learning Tracker</h1>
                             <p className="text-slate-400 text-sm">Track your courses, tutorials, and skills</p>
@@ -489,77 +491,110 @@ export default function Learning() {
                         </Button>
                     </div>
 
-                    {/* Stats Row */}
+                    {/* Stats Row - Full Width */}
                     <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 mb-4 flex-shrink-0">
-                        <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
+                        <div className="flex-shrink-0 w-48 sm:w-auto">
                             <StatCard icon={<BookOpen size={20} />} label="Total Entries" value={stats.totalLogs || 0} color="purple" delay={0.1} />
                         </div>
-                        <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
+                        <div className="flex-shrink-0 w-48 sm:w-auto">
                             <StatCard icon={<Flame size={20} />} label="Current Streak" value={stats.currentStreak || 0} color="cyan" delay={0.15} />
                         </div>
-                        <div className="flex-shrink-0 w-48 sm:w-56 md:w-auto">
+                        <div className="flex-shrink-0 w-48 sm:w-auto">
                             <StatCard icon={<Calendar size={20} />} label="Unique Days" value={stats.uniqueDays || 0} color="green" delay={0.2} />
                         </div>
                     </div>
 
-                    {/* Scrollable Content Area */}
-                    <div
-                        ref={learningContainerRef}
-                        id="learning-scroll-container"
-                        className="flex-1 overflow-y-auto min-h-0 pr-6 -mr-6 relative"
-                    >
-                        <div ref={learningContentRef} className="pb-4">
-                            {/* Error State */}
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 mb-6"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <AlertTriangle className="text-red-400" size={20} />
-                                        <p className="text-red-400 flex-1">Error: {error}</p>
-                                        <Button variant="ghost" onClick={fetchData} className="text-sm">Retry</Button>
-                                    </div>
-                                </motion.div>
-                            )}
+                    <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-hidden">
+                        {/* Main Content Area (Entries) */}
+                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                            {/* Scrollable List */}
+                            <div
+                                ref={learningContainerRef}
+                                id="learning-scroll-container"
+                                className="flex-1 overflow-y-auto min-h-0 pr-2 lg:pr-4 -mr-2 lg:-mr-4 relative custom-scrollbar"
+                            >
+                                <div ref={learningContentRef} className="pb-4">
+                                    {/* Error State */}
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="rounded-xl p-4 bg-red-500/10 border border-red-500/30 mb-6"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <AlertTriangle className="text-red-400" size={20} />
+                                                <p className="text-red-400 flex-1">Error: {error}</p>
+                                                <Button variant="ghost" onClick={fetchData} className="text-sm">Retry</Button>
+                                            </div>
+                                        </motion.div>
+                                    )}
 
-                            {/* Empty State */}
-                            {!loading && learningEntries.length === 0 && !error && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="text-center py-20 rounded-2xl border-2 border-dashed border-white/5 bg-white/[0.02]"
-                                >
-                                    <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-6">
-                                        <BookOpen size={40} className="text-purple-500" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-white mb-2">No Learning Entries Yet</h3>
-                                    <p className="text-slate-400 mb-8 max-w-sm mx-auto text-xs md:text-base px-4 md:px-0">Start tracking your learning journey, skills, and progress today!</p>
-                                    <Button onClick={openAddModal} className="px-8">Add Your First Entry</Button>
-                                </motion.div>
-                            )}
+                                    {/* Empty State */}
+                                    {!loading && learningEntries.length === 0 && !error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="text-center py-20 rounded-2xl border-2 border-dashed border-white/5 bg-white/[0.02]"
+                                        >
+                                            <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-6">
+                                                <BookOpen size={40} className="text-purple-500" />
+                                            </div>
+                                            <h3 className="text-xl font-semibold text-white mb-2">No Learning Entries Yet</h3>
+                                            <p className="text-slate-400 mb-8 max-w-sm mx-auto text-xs md:text-base px-4 md:px-0">Start tracking your learning journey, skills, and progress today!</p>
+                                            <Button onClick={openAddModal} className="px-8">Add Your First Entry</Button>
+                                        </motion.div>
+                                    )}
 
-                            {/* Entries List */}
-                            {learningEntries.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className="text-lg font-semibold text-white">Recent Entries</h2>
-                                        <span className="text-slate-500 text-sm">{learningEntries.length} entries</span>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-                                        {learningEntries.map((entry, idx) => (
-                                            <EntryCard
-                                                key={entry.id}
-                                                entry={entry}
-                                                onEdit={openEditModal}
-                                                onDelete={(id) => setDeleteConfirm(id)}
-                                                delay={0.1 + idx * 0.05}
-                                            />
-                                        ))}
-                                    </div>
+                                    {/* Entries List */}
+                                    {learningEntries.length > 0 && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                                                    <BookOpen className="w-4 h-4 text-purple-400" />
+                                                    Activity Log
+                                                </h2>
+                                                <span className="text-slate-500 text-xs font-medium bg-white/5 px-2 py-1 rounded-full border border-white/5">
+                                                    {learningEntries.length} entries
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {learningEntries.map((entry, idx) => (
+                                                    <EntryCard
+                                                        key={entry.id}
+                                                        entry={entry}
+                                                        onEdit={openEditModal}
+                                                        onDelete={(id) => setDeleteConfirm(id)}
+                                                        delay={0.1 + idx * 0.05}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
+                        </div>
+
+                        {/* Right Sidebar (Fixed) */}
+                        <div className="hidden lg:flex w-80 flex-shrink-0 flex-col gap-4 overflow-hidden">
+                            {/* LeetCode Integration */}
+                            <div className="flex-1 min-h-0">
+                                <LeetCodeStats />
+                            </div>
+
+                            {/* Top Skills Analysis */}
+                            <div className="flex-1 min-h-0">
+                                <TopSkills entries={learningEntries} />
+                            </div>
+                        </div>
+
+                        {/* Mobile LeetCode & Skills (visible only on small screens) */}
+                        <div className="lg:hidden flex flex-col gap-6 mb-8 flex-shrink-0">
+                            <div className="h-96">
+                                <LeetCodeStats />
+                            </div>
+                            <div className="h-80">
+                                <TopSkills entries={learningEntries} />
+                            </div>
                         </div>
                     </div>
                 </div>

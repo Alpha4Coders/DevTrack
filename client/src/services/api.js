@@ -196,6 +196,11 @@ export const showcaseApi = {
         api.delete(`/showcase/${showcaseId}/comments/${commentId}`),
 };
 
+export const leetCodeApi = {
+    getStats: () => api.get('/leetcode/stats'),
+    updateConfig: (username, verificationCode) => api.post('/leetcode/config', { username, verificationCode }),
+};
+
 export default api;
 
 

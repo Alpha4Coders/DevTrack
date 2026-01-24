@@ -24,6 +24,7 @@ const projectIdeasRoutes = require('./routes/projectIdeasRoutes');
 const savedIdeasRoutes = require('./routes/savedIdeasRoutes');
 const showcaseRoutes = require('./routes/showcaseRoutes');
 const readmeRoutes = require('./routes/readmeRoutes');
+const leetCodeRoutes = require('./routes/leetCodeRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -146,6 +147,7 @@ app.use('/api/project-ideas', projectIdeasRoutes);
 app.use('/api/saved-ideas', savedIdeasRoutes);
 app.use('/api/showcase', showcaseRoutes);
 app.use('/api/readme', readmeRoutes);
+app.use('/api/leetcode', leetCodeRoutes);
 
 // ======================
 // 404 HANDLER
