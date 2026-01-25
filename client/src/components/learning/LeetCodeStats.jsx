@@ -2,18 +2,54 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SiLeetcode } from 'react-icons/si';
 import { leetCodeApi } from '../../services/api';
+import { useUser } from '@clerk/clerk-react';
 import { Trophy, Flame, Target, Calendar, ExternalLink, RefreshCw, AlertTriangle, Edit2, Check, X, Zap } from 'lucide-react';
 import Button from '../ui/Button';
 
+// Utility to calculate Levenshtein distance similarity
+const calculateSimilarity = (str1, str2) => {
+    if (!str1 || !str2) return 0;
+
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+
+    if (s1 === s2) return 1;
+    if (s1.includes(s2) || s2.includes(s1)) return 0.8; // High similarity if one contains other
+
+    const track = Array(s2.length + 1).fill(null).map(() =>
+        Array(s1.length + 1).fill(null));
+    for (let i = 0; i <= s1.length; i += 1) {
+        track[0][i] = i;
+    }
+    for (let j = 0; j <= s2.length; j += 1) {
+        track[j][0] = j;
+    }
+    for (let j = 1; j <= s2.length; j += 1) {
+        for (let i = 1; i <= s1.length; i += 1) {
+            const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            track[j][i] = Math.min(
+                track[j][i - 1] + 1, // deletion
+                track[j - 1][i] + 1, // insertion
+                track[j - 1][i - 1] + indicator, // substitution
+            );
+        }
+    }
+
+    const distance = track[s2.length][s1.length];
+    const maxLength = Math.max(s1.length, s2.length);
+    if (maxLength === 0) return 0;
+
+    return 1 - (distance / maxLength);
+};
+
 export default function LeetCodeStats() {
+    const { user } = useUser();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [error, setError] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [usernameInput, setUsernameInput] = useState('');
     const [saving, setSaving] = useState(false);
-    const [verificationStep, setVerificationStep] = useState('INPUT');
-    const [verificationCode, setVerificationCode] = useState('');
 
     useEffect(() => {
         fetchStats();
@@ -35,36 +71,73 @@ export default function LeetCodeStats() {
         }
     };
 
-    const handleInitiateVerification = () => {
+    const handleConnect = async () => {
         if (!usernameInput.trim()) return;
-        // Generate a random 6-character code
-        const code = `devtrack-${Math.random().toString(36).substring(2, 8)}`;
-        setVerificationCode(code);
-        setVerificationStep('VERIFY');
-        setError(null);
-    };
 
-    const handleVerifyAndSave = async () => {
+        setError(null);
+        setSaving(true);
+
+        // --- 40% Similarity Heuristic Check ---
+        const input = usernameInput.trim();
+        const comparators = [];
+
+        // 1. Clerk Username
+        if (user.username) comparators.push(user.username);
+
+        // 2. Email parts (before @)
+        user.emailAddresses.forEach(email => {
+            const prefix = email.emailAddress.split('@')[0];
+            comparators.push(prefix);
+            // Also try removing dots from gmail-style comparisons
+            if (prefix.includes('.')) comparators.push(prefix.replace(/\./g, ''));
+        });
+
+        // 3. Full Name
+        if (user.fullName) {
+            comparators.push(user.fullName);
+            // pushing parts of names too (first name, last name)
+            if (user.firstName) comparators.push(user.firstName);
+            if (user.lastName) comparators.push(user.lastName);
+        }
+
+        // 4. GitHub Username (if linked)
+        const githubAccount = user.externalAccounts.find(acc => acc.provider === 'github');
+        if (githubAccount && githubAccount.username) {
+            comparators.push(githubAccount.username);
+        }
+
+        // Calculate max similarity score
+        let maxScore = 0;
+        let bestMatch = '';
+
+        comparators.forEach(ref => {
+            if (!ref) return;
+            const score = calculateSimilarity(input, ref);
+            if (score > maxScore) {
+                maxScore = score;
+                bestMatch = ref;
+            }
+        });
+
+        console.log('LeetCode Matching Debug:', { input, comparators, maxScore, bestMatch });
+
+        const SIMILARITY_THRESHOLD = 0.4; // 40% match required
+
+        if (maxScore < SIMILARITY_THRESHOLD) {
+            setError(`Username must be at least 40% similar to your profile (e.g. matches "${bestMatch || 'your name'}"). This is to verify ownership.`);
+            setSaving(false);
+            return;
+        }
+
         try {
-            setSaving(true);
-            await leetCodeApi.updateConfig(usernameInput, verificationCode);
+            await leetCodeApi.updateConfig(usernameInput); // Backend handles null verificationCode gracefully
             setIsEditing(false);
             fetchStats();
-            // Reset state
-            setVerificationStep('INPUT');
-            setVerificationCode('');
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Verification failed');
+            setError(err.response?.data?.message || err.message || 'Connection failed');
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        setError(null);
-        setVerificationStep('INPUT');
-        setVerificationCode('');
     };
 
     if (loading) {
@@ -116,85 +189,44 @@ export default function LeetCodeStats() {
             >
                 <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <SiLeetcode className="text-orange-500" />
-                    {verificationStep === 'INPUT' ? 'Connect LeetCode' : 'Verify Ownership'}
+                    Connect LeetCode
                 </h3>
 
-                {verificationStep === 'INPUT' ? (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs uppercase tracking-wider text-slate-500 mb-1.5 font-bold">Username</label>
-                            <input
-                                type="text"
-                                value={usernameInput}
-                                onChange={(e) => setUsernameInput(e.target.value)}
-                                placeholder="e.g. tourist"
-                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-orange-500 focus:outline-none transition-colors"
-                            />
-                        </div>
-
-                        {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-xs">
-                                <AlertTriangle size={14} className="flex-shrink-0" />
-                                <span className="flex-1">{error}</span>
-                            </div>
-                        )}
-
-                        <div className="flex gap-2">
-                            <Button variant="ghost" onClick={handleCancel} className="flex-1">
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleInitiateVerification}
-                                className="flex-1 bg-orange-500 hover:bg-orange-600 border-none"
-                            >
-                                Next
-                            </Button>
-                        </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs uppercase tracking-wider text-slate-500 mb-1.5 font-bold">Username</label>
+                        <input
+                            type="text"
+                            value={usernameInput}
+                            onChange={(e) => setUsernameInput(e.target.value)}
+                            placeholder="e.g. tourist"
+                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-orange-500 focus:outline-none transition-colors"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1.5 ml-1">
+                            Username must be similar to your DevTrack profile name or email.
+                        </p>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3">
-                            <p className="text-xs text-orange-200 mb-2 font-medium">
-                                To verify this account is yours:
-                            </p>
-                            <ol className="list-decimal list-inside text-[10px] text-slate-400 space-y-1 mb-3">
-                                <li>Go to your LeetCode <strong>Profile</strong> settings</li>
-                                <li>Add the code below to your <strong>Summary</strong></li>
-                                <li>Come back and click verify</li>
-                            </ol>
-                            <div className="flex bg-black/40 rounded-lg p-2 items-center justify-between border border-white/10">
-                                <code className="text-orange-400 font-mono text-xs select-all text-center flex-1">{verificationCode}</code>
-                                <Button
-                                    variant="ghost"
-                                    className="h-6 w-6 p-0 text-slate-400 hover:text-white"
-                                    onClick={() => navigator.clipboard.writeText(verificationCode)}
-                                >
-                                    <Check size={12} />
-                                </Button>
-                            </div>
-                        </div>
 
-                        {error && (
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-xs">
-                                <AlertTriangle size={14} className="flex-shrink-0" />
-                                <span className="flex-1">{error}</span>
-                            </div>
-                        )}
-
-                        <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setVerificationStep('INPUT')} className="flex-1 text-xs">
-                                Back
-                            </Button>
-                            <Button
-                                onClick={handleVerifyAndSave}
-                                disabled={saving}
-                                className="flex-1 bg-orange-500 hover:bg-orange-600 border-none"
-                            >
-                                {saving ? <RefreshCw className="animate-spin w-4 h-4" /> : 'Verify & Save'}
-                            </Button>
+                    {error && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-xs">
+                            <AlertTriangle size={14} className="flex-shrink-0" />
+                            <span className="flex-1">{error}</span>
                         </div>
+                    )}
+
+                    <div className="flex gap-2">
+                        <Button variant="ghost" onClick={() => { setIsEditing(false); setError(null); }} className="flex-1">
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleConnect}
+                            disabled={saving}
+                            className="flex-1 bg-orange-500 hover:bg-orange-600 border-none"
+                        >
+                            {saving ? <RefreshCw className="animate-spin w-4 h-4" /> : 'Connect'}
+                        </Button>
                     </div>
-                )}
+                </div>
             </motion.div>
         );
     }
