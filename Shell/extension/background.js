@@ -1,7 +1,7 @@
 // DevTrack Activity Logger - Background Service Worker
 // Tracks active tab changes and sends duration data to backend
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://devtrack-api.onrender.com";
 const MIN_DURATION = 3; // Minimum seconds to log (ignore quick switches)
 
 let currentTab = null;
