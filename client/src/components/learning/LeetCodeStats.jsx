@@ -294,7 +294,7 @@ export default function LeetCodeStats() {
                 <Calendar size={10} /> Recent Activity
             </h4>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar relative z-10 -mr-1">
+            <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar relative z-30 -mr-1 overscroll-contain pointer-events-auto touch-pan-y">
                 <div className="space-y-2 pb-1">
                     {stats.recentSubmissions.map((sub) => (
                         <a

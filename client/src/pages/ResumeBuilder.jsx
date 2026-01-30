@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import ResumePaper from '../components/ResumePaper'
 import {
     Save,
     Download,
@@ -33,7 +34,7 @@ import confetti from 'canvas-confetti'
 // PREVIEW COMPONENT (The "God Level" Resume)
 // A4 Scaled CSS
 // ==========================================
-const ResumePaper = ({ data, projects, verifiedSkills = [] }) => {
+const OldResumePaper = ({ data, projects, verifiedSkills = [] }) => {
     return (
         <div id="resume-preview" className="relative bg-white text-slate-800 w-[210mm] min-h-[297mm] p-0 shadow-2xl mx-auto origin-top transform scale-[0.6] lg:scale-[0.75] xl:scale-[0.85] transition-transform duration-300 print:transform-none print:scale-100 print:shadow-none print:m-0 print:w-full print:h-auto font-sans overflow-hidden">
 
@@ -294,6 +295,7 @@ export default function ResumeBuilder() {
     // Context Data (Available Projects/Skills)
     const [availableProjects, setAvailableProjects] = useState([])
     const [availableVerifiedSkills, setAvailableVerifiedSkills] = useState([])
+    const [user, setUser] = useState(null)
 
     // Hydrated Projects for Preview
     const [previewProjects, setPreviewProjects] = useState([])
@@ -323,6 +325,8 @@ export default function ResumeBuilder() {
                 projectsApi.getAll({ limit: 100 }), // Fetch all (or at least 100)
                 authApi.getMe()
             ])
+
+            setUser(userRes.data.user)
 
             // 1. Setup Resume Data
             // 1. Setup Resume Data
@@ -610,7 +614,7 @@ export default function ResumeBuilder() {
                 </div>
 
                 {/* Content Editor */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+                <div data-lenis-prevent className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 overscroll-contain relative z-30 pointer-events-auto touch-pan-y">
 
                     {/* Basics */}
                     <div className="space-y-4">
@@ -992,14 +996,14 @@ export default function ResumeBuilder() {
             </div>
 
             {/* RIGHT PREVIEW (Real-time) */}
-            <div className="flex-1 bg-slate-900 h-screen overflow-y-auto flex items-start justify-center pt-8 pb-8 print:p-0 print:h-auto print:w-auto print:bg-white print:overflow-visible">
+            <div data-lenis-prevent className="flex-1 bg-slate-900 h-screen overflow-y-auto flex items-start justify-center pt-8 pb-8 print:p-0 print:h-auto print:w-auto print:bg-white print:overflow-visible overscroll-contain relative z-30 pointer-events-auto touch-pan-y">
                 <div className="print:hidden mb-4 absolute top-4 right-8 flex gap-2">
                     <div className="bg-slate-800/80 backdrop-blur rounded-lg px-4 py-2 text-xs text-slate-400 border border-slate-700">
                         A4 Preview Mode
                     </div>
                 </div>
 
-                <ResumePaper data={resumeData} projects={previewProjects} verifiedSkills={availableVerifiedSkills} />
+                <ResumePaper data={resumeData} projects={previewProjects} verifiedSkills={availableVerifiedSkills} user={user} />
             </div>
         </div>
     )

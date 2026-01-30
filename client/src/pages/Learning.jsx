@@ -1,6 +1,6 @@
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
-import { logsApi } from '../services/api'
+import { logsApi, projectsApi } from '../services/api'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useCache } from '../context/CacheContext'
@@ -285,6 +285,7 @@ export default function Learning() {
 
     const [learningEntries, setLearningEntries] = useState(cachedData.entries || [])
     const [stats, setStats] = useState(cachedData.stats || { totalLogs: 0, currentStreak: 0, uniqueDays: 0 })
+    const [verifiedSkills, setVerifiedSkills] = useState([])
 
     const [loading, setLoading] = useState(!hasCachedData('learning_data'))
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -326,26 +327,46 @@ export default function Learning() {
                 return
             }
 
-            const [logsRes, statsRes] = await Promise.all([
+            const [logsRes, statsRes, projectsRes] = await Promise.all([
                 logsApi.getAll(
                     { limit: 50 },
                     { headers: { Authorization: `Bearer ${token}` } }
                 ),
                 logsApi.getStats({
                     headers: { Authorization: `Bearer ${token}` }
-                })
+                }),
+                projectsApi.getAll(
+                    { limit: 100 },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                )
             ])
 
             const newEntries = logsRes.data.data.logs || []
             const newStats = statsRes.data.data || { totalLogs: 0, currentStreak: 0, uniqueDays: 0 }
 
+            // Calculate Verified Skills
+            const projects = projectsRes.data.data.projects || []
+            const skillCounts = {}
+            projects.forEach(p => {
+                if (p.technologies && Array.isArray(p.technologies)) {
+                    p.technologies.forEach(tech => {
+                        skillCounts[tech] = (skillCounts[tech] || 0) + 1
+                    })
+                }
+            })
+            const calculatedSkills = Object.entries(skillCounts)
+                .map(([name, count]) => ({ name, count, verified: true }))
+                .sort((a, b) => b.count - a.count)
+
             setLearningEntries(newEntries)
             setStats(newStats)
+            setVerifiedSkills(calculatedSkills)
 
             // Cache data
             setCachedData('learning_data', {
                 entries: newEntries,
-                stats: newStats
+                stats: newStats,
+                verifiedSkills: calculatedSkills
             })
         } catch (err) {
             setError(err.message)
@@ -633,7 +654,7 @@ export default function Learning() {
 
                                 {/* Top Skills */}
                                 <div className="h-[250px] flex-shrink-0">
-                                    <TopSkills entries={learningEntries} />
+                                    <TopSkills entries={learningEntries} verifiedSkills={verifiedSkills} />
                                 </div>
                             </div>
                         </div>
@@ -643,7 +664,7 @@ export default function Learning() {
                             {/* Activity + Skills Row */}
                             <div className="grid grid-cols-1 gap-3 h-[200px]">
                                 {/* <ActivityStats onShowExtensionHelp={() => setShowExtensionModal(true)} /> */}
-                                <TopSkills entries={learningEntries} />
+                                <TopSkills entries={learningEntries} verifiedSkills={verifiedSkills} />
                             </div>
                             {/* LeetCode Full Width */}
                             <div className="h-[220px]">

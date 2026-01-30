@@ -42,16 +42,11 @@ const getProfileByUsername = async (req, res, next) => {
             .get();
 
         const allProjects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const showcaseProjects = allProjects
-            .filter(p => p.status === 'Completed' || p.status === 'Active')
-            .sort((a, b) => (b.progress || 0) - (a.progress || 0)) // Sort by progress/quality
-            .slice(0, 6); // Top 6
+
 
         // 3. Calculate/Get Verified Skills (if not already stored)
-        // If we haven't implemented stored verifiedSkills yet, we can calculate on fly for now
-        // or use the ones from userData if they exist.
         let verifiedSkills = userData.verifiedSkills || [];
-        
+
         if (!userData.verifiedSkills) {
             // Quick calculation fallback
             const skillCounts = {};
@@ -62,9 +57,31 @@ const getProfileByUsername = async (req, res, next) => {
                     });
                 }
             });
-             verifiedSkills = Object.entries(skillCounts)
+            verifiedSkills = Object.entries(skillCounts)
                 .map(([name, count]) => ({ name, count, verified: count >= 1 })) // Simple threshold
-                .sort((a,b) => b.count - a.count);
+                .sort((a, b) => b.count - a.count);
+        }
+
+        // --- CUSTOMIZATION LOGIC ---
+        const prefs = userData.preferences || {};
+        const publicPrefs = prefs.publicProfile || {};
+
+        // Filter Showcased Projects
+        let showcaseProjects = [];
+        if (publicPrefs.showcasedProjectIds && Array.isArray(publicPrefs.showcasedProjectIds) && publicPrefs.showcasedProjectIds.length > 0) {
+            // Manual Selection
+            showcaseProjects = allProjects.filter(p => publicPrefs.showcasedProjectIds.includes(p.id));
+            // Maintain order of selection if important, or sort by standard metric
+            // For now, let's keep them in the order of ids provided if possible, or just default sort
+            showcaseProjects.sort((a, b) => {
+                return publicPrefs.showcasedProjectIds.indexOf(a.id) - publicPrefs.showcasedProjectIds.indexOf(b.id);
+            });
+        } else {
+            // Default: Top 6 Active/Completed
+            showcaseProjects = allProjects
+                .filter(p => p.status === 'Completed' || p.status === 'Active')
+                .sort((a, b) => (b.progress || 0) - (a.progress || 0)) // Sort by progress/quality
+                .slice(0, 6); // Top 6
         }
 
         // 4. Sanitize Return Data
@@ -72,15 +89,19 @@ const getProfileByUsername = async (req, res, next) => {
             username: userData.githubUsername,
             name: userData.name,
             avatarUrl: userData.avatarUrl,
-            bio: userData.bio || `Developer building with ${verifiedSkills[0]?.name || 'passion'}`, // Fallback bio
+            // Use custom headline/bio if set, otherwise fallback
+            headline: publicPrefs.headline || userData.headline || 'Full Stack Developer',
+            bio: publicPrefs.bio || userData.bio || `Developer building with ${verifiedSkills[0]?.name || 'passion'}`,
             location: userData.location || null,
-            joinDate: userData.createdAt,
+            joinDate: userData.createdAt && typeof userData.createdAt.toDate === 'function'
+                ? userData.createdAt.toDate().toISOString()
+                : (userData.createdAt || new Date().toISOString()),
             stats: {
                 totalProjects: allProjects.length,
                 totalCommits: allProjects.reduce((sum, p) => sum + (p.commits || 0), 0),
-                learningStreak: 0, // Placeholder until we link learning logs
+                learningStreak: 0,
             },
-            verifiedSkills: verifiedSkills,
+            verifiedSkills: publicPrefs.showSkills !== false ? verifiedSkills : [], // Hide if disabled
             projects: showcaseProjects.map(p => ({
                 id: p.id,
                 name: p.name,
