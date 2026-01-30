@@ -381,12 +381,32 @@ const deleteProject = async (req, res, next) => {
  * Get projects statistics
  * GET /api/projects/stats
  */
+const NodeCache = require('node-cache');
+const statsCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
+
+/**
+ * Get projects statistics
+ * GET /api/projects/stats
+ */
 const getStats = async (req, res, next) => {
     try {
         const { userId } = req.auth;
+        const cacheKey = `stats_${userId}`;
 
+        // Check cache first
+        const cachedStats = statsCache.get(cacheKey);
+        if (cachedStats) {
+            return res.status(200).json({
+                success: true,
+                data: cachedStats,
+                fromCache: true
+            });
+        }
+
+        // Optimized query: select only needed fields
         const projectsSnapshot = await collections.projects()
             .where('uid', '==', userId)
+            .select('status', 'commits', 'updatedAt', 'technologies')
             .get();
 
         const projects = projectsSnapshot.docs.map((doc) => doc.data());
@@ -397,7 +417,6 @@ const getStats = async (req, res, next) => {
         const totalCommits = projects.reduce((sum, p) => sum + (p.commits || 0), 0);
 
         // Calculate commit growth based on project update times as a proxy
-        // Since we don't have historical commit snapshots, we use recent updates
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const twoWeeksAgo = new Date();
@@ -411,7 +430,6 @@ const getStats = async (req, res, next) => {
             totalCommitGrowth = recentActiveProjects > 0 ? 15 : 0;
         } else {
             totalCommitGrowth = Math.round(((recentActiveProjects - previousActiveProjects) / previousActiveProjects) * 100);
-            // Limit to reasonable range if it's a proxy
             if (totalCommitGrowth === 0 && recentActiveProjects > 0) totalCommitGrowth = 5;
         }
 
@@ -428,16 +446,21 @@ const getStats = async (req, res, next) => {
             .slice(0, 5)
             .map(([tech, count]) => ({ tech, count }));
 
+        const statsData = {
+            totalProjects,
+            activeProjects,
+            completedProjects,
+            totalCommits,
+            totalCommitGrowth,
+            topTechnologies,
+        };
+
+        // Set cache
+        statsCache.set(cacheKey, statsData);
+
         res.status(200).json({
             success: true,
-            data: {
-                totalProjects,
-                activeProjects,
-                completedProjects,
-                totalCommits,
-                totalCommitGrowth,
-                topTechnologies,
-            },
+            data: statsData,
         });
     } catch (error) {
         next(error);
