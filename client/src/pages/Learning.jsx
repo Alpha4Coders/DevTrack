@@ -662,13 +662,15 @@ export default function Learning() {
                         {/* Mobile Cards - Horizontal scroll on small screens */}
                         <div className="lg:hidden flex flex-col gap-4 mb-8 flex-shrink-0">
                             {/* Activity + Skills Row */}
-                            <div className="grid grid-cols-1 gap-3 h-[200px]">
-                                {/* <ActivityStats onShowExtensionHelp={() => setShowExtensionModal(true)} /> */}
-                                <TopSkills entries={learningEntries} verifiedSkills={verifiedSkills} />
-                            </div>
-                            {/* LeetCode Full Width */}
-                            <div className="h-[220px]">
-                                <LeetCodeStats />
+                            <div className="flex flex-col gap-4">
+                                {/* Top Skills - Flexible height */}
+                                <div className="min-h-[220px] h-auto flex-shrink-0">
+                                    <TopSkills entries={learningEntries} verifiedSkills={verifiedSkills} />
+                                </div>
+                                {/* LeetCode Full Width - Flexible height */}
+                                <div className="min-h-[220px] h-auto flex-shrink-0">
+                                    <LeetCodeStats />
+                                </div>
                             </div>
                         </div>
                     </div>
