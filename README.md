@@ -13,7 +13,8 @@ DevTrack is an AI-enhanced developer ecosystem designed to bridge the gap betwee
 Traditional portfolios show where you _are_. DevTrack shows how you _got there_.
 
 - **Insightful Tracking**: Log learning logs with mood and time metrics.
-- **AI-Powered Analysis**: Deep repository analysis using Llama 3.3 to track real progress.
+- **AI-Powered Project Intelligence**: Deep repository analysis using Llama 3.3 to identify **Security Vulnerabilities**, **Complexity Hotspots**, and generate **Actionable Next Steps**.
+- **Action-Oriented Dashboard**: A smart interface that prioritizes critical "Warnings" (Security & Complexity) while keeping you forward-looking with "What Next" suggestions.
 - **Consistency Engine**: GitHub commit streaks merged with learning streaks.
 - **Intelligent Assistant**: Context-aware AI chat that knows your stack and progress.
 
