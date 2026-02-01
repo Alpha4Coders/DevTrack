@@ -264,7 +264,7 @@ function ProjectCard({
             {project.status}
           </span>
           {/* Show analyzing indicator when server is processing GitHub/AI data */}
-          {project.isAnalyzing && (
+          {(project.isAnalyzing || analyzing) && (
             <span className="px-2 py-1 rounded-full text-[10px] uppercase tracking-wider font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 ml-2 flex-shrink-0 flex items-center gap-1">
               <Loader2 className="w-3 h-3 animate-spin" />
               Analyzing
@@ -278,6 +278,17 @@ function ProjectCard({
             <span className="text-slate-500 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
               Progress
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReanalyze(project);
+                }}
+                disabled={analyzing}
+                className="ml-1 p-1 rounded-md hover:bg-white/10 text-slate-500 hover:text-purple-400 transition-colors disabled:opacity-50"
+                title="Re-analyze Progress"
+              >
+                <RefreshCcw size={10} className={analyzing ? "animate-spin" : ""} />
+              </button>
             </span>
             <span className="text-purple-400 font-bold">{progress}%</span>
           </div>
@@ -438,6 +449,12 @@ function ProjectCard({
                                             style={{ width: `${(hotspot.complexityScore / 10) * 100}%` }}
                                           />
                                         </div>
+                                        {/* Display the reason for complexity */}
+                                        {hotspot.reason && (
+                                          <p className="text-[10px] text-slate-500 italic leading-tight pl-1 border-l-2 border-white/10">
+                                            "{hotspot.reason}"
+                                          </p>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -1282,7 +1299,7 @@ export default function Projects() {
   const [formError, setFormError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [completeConfirm, setCompleteConfirm] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -1337,6 +1354,7 @@ export default function Projects() {
   }, []);
 
   const fetchData = async () => {
+    console.log("DEBUG: fetchData called at", new Date().toISOString());
     try {
       if (!hasCachedData("projects_data")) {
         setLoading(true);
@@ -1632,15 +1650,21 @@ export default function Projects() {
     }
   };
 
+  // TEMPORARY FIX: Define analyzing to prevent ReferenceError if any rogue usages exist
+  const analyzing = false;
+
   const handleReanalyze = async (project) => {
     if (!project.repositoryUrl) return;
 
     try {
-      setAnalyzing(true);
+      setAnalyzingId(project.id);
       const analysisData = await analyzeWithGitHub(project.repositoryUrl);
 
+      console.log("DEBUG: Analysis Result:", analysisData);
+
       if (analysisData) {
-        await projectsApi.update(project.id, {
+        // Correctly construct payload using direct properties from analysisData
+        const updatePayload = {
           commits: analysisData.commits,
           technologies:
             analysisData.technologies.length > 0
@@ -1649,13 +1673,39 @@ export default function Projects() {
           githubData: analysisData.githubData,
           progress: analysisData.progress,
           aiAnalysis: analysisData.aiAnalysis,
-        });
-        fetchData();
+        };
+
+        // Optimistically update
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === project.id
+              ? { ...p, ...updatePayload, isAnalyzing: false }
+              : p
+          )
+        );
+
+        const response = await projectsApi.update(project.id, updatePayload);
+
+        // Ensure authoritative state from server
+        if (response.data?.success && response.data?.data) {
+          const updatedProject = response.data.data;
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === project.id ? updatedProject : p
+            )
+          );
+        }
       }
     } catch (err) {
       console.error("Error re-analyzing project:", err);
+      // Show the actual error from the server
+      const serverError = err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`Update failed: ${serverError}`);
+
+      // Only fetch on error to restore state
+      fetchData();
     } finally {
-      setAnalyzing(false);
+      setAnalyzingId(null);
     }
   };
 
@@ -2129,7 +2179,7 @@ export default function Projects() {
                       onComplete={handleComplete}
                       onGenerateReadme={handleGenerateReadme}
                       onCopySuggestion={handleCopySuggestion}
-                      analyzing={analyzing}
+                      analyzing={analyzingId === project.id}
                       delay={index * 0.1}
                     />
                   ))}
@@ -2211,7 +2261,7 @@ export default function Projects() {
             onSubmit={handleSubmit}
             onCancel={() => setShowModal(false)}
             isEdit={false}
-            analyzing={analyzing}
+            analyzing={false}
             error={formError}
           />
         </Modal>
@@ -2234,7 +2284,7 @@ export default function Projects() {
               setEditingProject(null);
             }}
             isEdit={true}
-            analyzing={analyzing}
+            analyzing={analyzingId === editingProject?.id}
             error={formError}
           />
         </Modal>
